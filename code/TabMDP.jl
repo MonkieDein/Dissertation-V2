@@ -64,6 +64,7 @@ viFunDict = Dict(
     "quant" => Dict( "type" => "quant", "fx" => quant , "cdf2pdf" => q_evenPdf), # Objective.pars := [1/J,2/J,...,J/J]
     "quant_under" => Dict( "type" => "quant", "fx" => quant , "cdf2pdf" => q_evenPdf), # Objective.pars := [0,1/J,...,(J-1)/J]
     "VaR" => Dict( "type" => "quant", "fx" => VaR , "cdf2pdf" => q_evenPdf), # Objective.pars := [0,1/J,...,(J-1)/J]
+    "VaR_mid" => Dict( "type" => "quant", "fx" => VaR , "cdf2pdf" => q_evenPdf), # Objective.pars := [0,1/J,...,(J-1)/J]
     "VaR_over" => Dict( "type" => "quant", "fx" => VaR , "cdf2pdf" => q_evenPdf), # Objective.pars := [1/J,2/J,...,J/J]
     "ERM" => Dict( "type" => "ent", "fx" => ERMs , "cdf2pdf" => q_evenPdf),
     "EVaR" => Dict( "type" => "ent", "fx" => EVaR , "cdf2pdf" => q_evenPdf), # Hau EVaR MDP
@@ -75,15 +76,15 @@ viFunDict = Dict(
 mutable struct Objective
     ρ::String
     T::Int
-    δ::Any
+    δ::Float64
     pars::Array
     l::Int
     ρ_type::String
     ρ_fx::Function
     pdf::Array
     parEval::Array # This is particular for DistMarkov type as they could have (discretization , evals)
-    function Objective(;ρ::String = "E", T::Int = -1, δ::Any = 0, pars = [1.0],parEval=[1.0])
-        ρ ∈ keys(viFunDict) || error(ρ * "-MDP not supported. Please choose from :"*string(allrisks))
+    function Objective(;ρ::String = "E", T::Int = -1, δ::Any = 0.0, pars = [1.0],parEval=[1.0])
+        ρ ∈ keys(viFunDict) || error(ρ * "-MDP not supported. Please choose from :"*string(collect(keys(viFunDict))))
         ρfeatures = viFunDict[ρ]
         ρ_type = ρfeatures["type"]
         ρ_fx = ρfeatures["fx"]
@@ -455,7 +456,7 @@ function targetVi(mdp::MDP,obj::Objective)
     minv = minimum(lb_v[1,findall(mdp.s0 .!= 0)])
     maxv = maximum(ub_v[1,findall(mdp.s0 .!= 0)])
     # digit(obj.δ) Integer : Decimal digit of discretization.
-    digit = -ceil(Int,log(maxv-minv)/log(10))+obj.δ
+    digit = -ceil(Int,log(maxv-minv)/log(10)+obj.δ)
     Z0 = ceil.(collect(minv:(10.0^(-digit)):maxv),digits=digit)
     # lb,ub : Lower bound and upper bound of z. During recursive
     # If z < lb[t,s], then v[t,s][z] = 0. 
@@ -530,16 +531,58 @@ function df2MDP(df,γ=0.95;s_init = 0)
         end
     end
 
-    (maximum(abs.(sum(P,dims=3) .- 1)) < 1e-14) || error("Transition does not sum to 1")
+    (maximum(abs.(sum(P,dims=3) .- 1)) < 1e-15) || error("Transition does not sum to 1")
     S_sa = [ [ [sn for sn in S if P[s,a,sn] > 0] for a in A ] for s in S ]
     P_sa = [ [ [P[s,a,sn] for sn in S_sa[s][a]] for a in A ] for s in S ]
     for ps in P_sa
         for psa in ps
-            (abs(sum(psa) - 1) < 1e-14) || error("Transition does not sum to 1")
+            (abs(sum(psa) - 1) < 1e-15) || error("Transition does not sum to 1")
         end
     end
     P_sample = [[Categorical(P[s,a,:]) for a in A] for s in S]
     return MDP(S, lSl, A, lAl, R, P, γ, s0,S_sa,P_sa,P_sample, valid_A)
+end
+
+function roundTransition(P_in,digits=15)
+    setprecision(1024)
+    # Define high precision numbers using BigFloat
+    P = BigFloat.(P_in)
+    P = round.(P ./ sum(P,dims=3),digits=15)
+    P[argmax(P,dims=3)] .+= (1 .- sum(P,dims=3))
+    # Convert back to Float64 to ensure consistency in DataType
+    return Float64.(round.(P,digits=digits))
+end
+
+function MDP2df(mdp::MDP;normalizeTransition=false)
+    (any(mdp.P .< 0)) && error("Have negative transition in MDP")
+    if normalizeTransition
+        P = roundTransition(mdp.P)
+    else 
+        P = mdp.P
+    end
+    (maximum(abs.(sum(P,dims=3) .- 1)) < 1e-15) || error("Transition does not sum to 1")
+
+    idstatefrom = []
+    idaction = []
+    idstateto = []
+    probability = []
+    reward = []
+    for s in mdp.S
+        for a in mdp.A
+            for s_ in mdp.S
+                if (P[s,a,s_] > 0) && (mdp.R[s,a,s_] != -Inf)
+                    push!(idstatefrom, s)
+                    push!(idaction, a)
+                    push!(idstateto, s_)
+                    push!(probability, P[s,a,s_])
+                    push!(reward, mdp.R[s,a,s_])
+                end
+            end
+        end
+    end
+    df = DataFrame(idstatefrom=idstatefrom, idaction=idaction, idstateto=idstateto, 
+    probability=probability, reward=reward)
+    return df
 end
 
 # Define a helper function to sample from the Categorical distribution

@@ -38,18 +38,19 @@ for T in [100]
     end
 
     # Simplify and Plot the Evaluations
-    for (risk_name, eval_metric) in [("VaR",VaR)] #,("CVaR",CVaR),("EVaR",EVaR)
+    for (risk_name, eval_metric) in [("VaR",VaR),("CVaR",CVaR),("EVaR",EVaR)] #
         ret = simplifyEvals(objs,mdp_dir=mdp_dir,testfile=testfile,eval_metric = eval_metric)
         for (domain, results) in ret
             plot(title = "", xlims=(0,1), 
-            xlabel = "Quantile level", ylabel = "Quantile value",legend=:outerright,
+            xlabel = "Risk level (α)", ylabel = "$risk_name value",legend=:outerright,
             guidefontsize = 16,legendfontsize = 14,tickfontsize=11) # 
             for obj in objs
                 ρ = obj.ρ
                 result = results[ρ]
-                scatter!(result["α"],result["values"], m = marker[ρ],ms=6,color=col[ρ], label=ifelse(ρ=="VaR","Alg 1",ifelse(ρ=="dVaR","VaR-IQN",ρ)),alpha=0.5)
+                scatter!(result["α"],result["values"], m = marker[ρ],ms=6,color=col[ρ], label=ifelse(ρ=="VaR","VaR (ours)",ifelse(ρ=="dVaR","VaR-IQN",ρ)),alpha=0.5)
             end
             savefig(check_path("fig/mc_test_result/all_algs/$risk_name/$lQl/$domain-$T.pdf"))
+            savefig(check_path("fig/mc_test_result/all_algs/$risk_name/$lQl/$domain-$T.png"))
         end
     end
 end

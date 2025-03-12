@@ -8,7 +8,7 @@ x = range(-10, 10, length=200)
 VaR_10 = quantile(dist, 0.1)
 
 # Plot the PDF curve
-plot(x, pdf.(dist, x), label="PDF", linewidth=2, color=:black)
+plot(x, pdf.(dist, x), label="x̃", linewidth=2, color=:black)
 # Fill the area to the left of the 10% quantile
 fill_x = x[x .<= VaR_10]  # Select x values on the left of the quantile
 fill_y = pdf.(dist, fill_x)  # Corresponding PDF values
@@ -20,7 +20,7 @@ annotate!(-3.5, 0.02, text("10%", :blue, :left, 12))
 annotate!(0, 0.02, text("90%", :black, :left, 12))
 
 # Labels and title
-xlabel!("x")
+xlabel!("x (Return)")
 ylabel!("Density")
 title!("Quantile of Absolutely Continuous Distribution")
 savefig(check_path("fig/Dissertation/Chapter2/VaR/continuous.pdf"))

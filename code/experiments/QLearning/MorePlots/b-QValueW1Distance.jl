@@ -10,7 +10,7 @@ par_hat= collect(LinRange(0, 1, lQl*2+1)[2:2:end]) # used for QRDQN methods
 parEval = collect(LinRange(0, 1, lEQl*2+1))[2:2:end]
 
 # set up discretization for mdp Q-learning evaluations
-ENV_NUM = 10000
+ENV_NUM = 100000
 seed=0
 T_inf = 100
 
@@ -42,7 +42,7 @@ for d in domains
     domain = d[1:end-5]
     VI_q = getTargetVaR(init_jld("experiment/run/train/out_$T_VI.jld2"),[obj_VI],mdp_dir=mdp_dir)
     W1_distance[domain] = Dict()
-    plot(title = "Q-learning vs DP ($domain)",ylabel="Wasserstein-1 Distance",xlabel ="Number of Samples",
+    plot(title = "Q-learning vs DP ($domain)",ylabel="Wasserstein-1 distance",xlabel ="Number of samples",
     titlefontsize = 18,guidefontsize = 16,legendfontsize = 14,tickfontsize=10)
     for (lr_setting,setting) in lr_settings
         println("$lr_setting-$domain")

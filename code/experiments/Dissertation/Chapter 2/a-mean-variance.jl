@@ -7,7 +7,7 @@ dist1 = Normal(0, 2)
 dist2 = MixtureModel([Normal(-4, 3),Normal(6, 3)], [0.5, 0.5])
 
 x = range(-20, 20, length=200)
-plot(x, pdf.(dist1, x), linestyle=:dot, label="x̃₁", linewidth=2, color =:red, xlabel="x", ylabel="Density", title="Two distributions")
+plot(x, pdf.(dist1, x), linestyle=:dot, label="x̃₁", linewidth=2, color =:red, xlabel="x (Return)", ylabel="Density", title="Two Distributions")
 plot!(x, pdf.(dist2, x), linestyle=:dot, label="x̃₂", linewidth=2, color =:blue)
 savefig(check_path("fig/Dissertation/Chapter2/risk_measures/a-two_distributions.pdf"))
 
@@ -21,7 +21,7 @@ CVaR_50_2 = mean(filter(x -> x <= quantile(dist2, 0.50), rand(dist2, 100_000))) 
 EVaR_25_1 = EVaR(distribution(rand(dist1, 100_000)),[0.25]) # EVaR 25% (dist1)
 EVaR_25_2 = EVaR(distribution(rand(dist2, 100_000)),[0.25]) # EVaR 25% (dist2)
 # Plot horizontal reference lines
-plot(; xlims=(-20,20),ylims=(-1,5), legend=false, title="Risk measure of the distributions", 
+plot(; xlims=(-20,20),ylims=(-1,5), legend=false, title="Risk Measure of the Distributions", 
 xlabel="Value", yticks=(0:4, ["EVaR 25%", "CVaR 50%","VaR 75%","Mean","Std Dev"]))
 
 # Add points for the distributions

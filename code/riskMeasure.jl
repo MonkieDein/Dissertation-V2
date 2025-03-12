@@ -164,7 +164,7 @@ function EVaR(d::distribution, α::Array;δ::Number = 0.1,min_α = 0.01,fast_app
     min_val = min(d)
     mean_val = E(d)
     if fast_approx
-        β = 1000 * (0.999 .^ (0:20000))
+        β = 100 * (0.99 .^ (0:2000))
     else 
         max_val = max(d)
         α_min = Base.max(minimum(α[ α .> 0]),min_α)
@@ -207,7 +207,7 @@ function jointD_fixPDF(Xs::Vector{Vector{Float64}},d_cond::Vector{Float64},marg_
 end
 
 """
-VaR_cdf2pdf(cdf) - convert cdf to pdf (underestimation)
+q_evenPdf(cdf) - convert cdf to pdf (even_unif)
 """
 function q_evenPdf(cdf)
     return ones(size(cdf)) ./ length(cdf)
@@ -272,7 +272,7 @@ Takes in an array of sorted CVaR values its respective cdf:
 returns the distribution (d).
 """
 function CVaR2D(cvar::Array, cdf::Array; decimal::Integer = 10)
-    issorted(X) ||  error("values of cvar must be sorted")
+    issorted(cvar) ||  error("values of cvar must be sorted")
     pdf = diff(cdf)
     X = CVaR2X(cvar,cdf,pdf,decimal=decimal)
     return distribution(X, pdf)

@@ -9,7 +9,7 @@ pars = collect(LinRange(0, 1, lQl+1))
 parEval = collect(LinRange(0, 1, lEQl*2+1))[2:2:end]
 
 # set up discretization for mdp Q-learning evaluations
-ENV_NUM = 10000
+ENV_NUM = 100000
 seed=0
 T_inf = 100
 # set up discretization for mdp Q-learning evaluations
@@ -68,10 +68,10 @@ for (i,lr_setting) in enumerate(lr_settings)
         end
     end
 end
-sideinfo2 = Label(f[2, 1:4], "Quantile level", fontsize = 30)
+sideinfo2 = Label(f[2, 1:4], "Quantile level (α)", fontsize = 30)
 sideinfo = Label(f[:, 0], "Quantile value", rotation = pi/2, fontsize = 30)
 obj_scatter = [[LineElement(color = (col[val], 0.5), lw=4) for val in ["Q","DP"]];
 [MarkerElement(color = (col[val], 0.5), marker = :circle,markersize = 16) for val in ["Q","DP"]]]
-l = Legend(f[2, 1:2],obj_scatter,["q̃ᵈ ","q̲ᵈ ","ρ( π̃  )","ρ( π̲  )"],orientation = :horizontal)
+l = Legend(f[2, 1:2],obj_scatter,["q̃ᵈ ","q̲ᵈ ","π̃  α-VaR performance","π̲  α-VaR performance"],orientation = :horizontal)
 save(check_path("fig/mc_test_result/all_algs/Q/inventory2.png"), f)
 save(check_path("fig/mc_test_result/all_algs/Q/inventory2.pdf"), f)

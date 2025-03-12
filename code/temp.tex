@@ -1,0 +1,1835 @@
+\documentclass[twoside]{article}
+\usepackage[accepted]{aistats2023}
+%\usepackage[accepted]{aistats2023}
+%\PassOptionsToPackage{numbers,sort,compress}{natbib}
+%\usepackage[hyperref,abbrvbib]{jmlr_adapted}
+
+%\usepackage[numbers,sort,compress]{natbib}
+% If you set papersize explicitly, activate the following three lines:
+%\special{papersize = 8.5in, 11in}
+%\setlength{\pdfpageheight}{11in}
+%\setlength{\pdfpagewidth}{8.5in}
+
+% If you use natbib package, activate the following three lines:
+\usepackage[round,sort]{natbib}
+\renewcommand{\bibname}{References}
+\renewcommand{\bibsection}{\subsubsection*{References}}
+
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{booktabs} % for professional tables
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsfonts} 
+\usepackage{bbm}
+\usepackage[english]{babel}
+\usepackage[ruled,vlined]{algorithm2e} %linesnumbered
+\usepackage[noabbrev,capitalize]{cleveref}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{pifont} % for the check marks
+\usepackage{xcolor}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\Tau}{\uptau}
+\newcommand{\BO}{\mathfrak{L}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\G}{\mathbb{G}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\simplexS}{\Delta^{\states}}
+\newcommand{\simplexA}{\Delta^{\actions}}
+\newcommand{\states}{\mathcal{S}}
+\newcommand{\actions}{\mathcal{A}}
+\newcommand{\opt}{^\star}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\DeclareMathOperator{\kl}{KL}
+\renewcommand{\exp}[1]{\operatorname{exp}\left( #1\right) }
+%\newcommand{\spannorm}[1]{\|#1\|_s}
+\newcommand{\vspan}{\Delta_{\mathfrak{R}}}
+\newcommand{\tr}{^{\top}}
+
+\renewcommand{\P}[1]{\mathbb{P}\left[ #1 \right]}
+\newcommand{\erm}[2]{\operatorname{ERM}_{#1}\left[#2\right]}
+\newcommand{\ermo}{\operatorname{ERM}}
+\newcommand{\var}[2]{\operatorname{VaR}_{#1} \left[#2\right]}
+\newcommand{\cvar}[2]{\operatorname{CVaR}_{#1} \left[#2\right]}
+\newcommand{\evar}[2]{\operatorname{EVaR}_{#1} \left[#2\right]}
+\newcommand{\vari}[2]{\operatorname{VaR}_{#1} \left[#2\right]}
+\newcommand{\risk}[1]{\psi \left[#1\right]}
+\newcommand{\risko}{\psi}
+
+\newcommand{\ermret}{\rho_{\erm}}
+\newcommand{\evarret}{\rho_{\evar}}
+
+\newcommand{\Real}{\mathbb{R}}
+
+\newcommand{\monkie}[1]{{\color{teal} Monkie: #1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\renewcommand{\cite}[1]{\citep{#1}}
+
+% \title{Entropic Risk Optimization in Discounted MDPs}
+
+% \author{%
+%   Jia Lin Hau \email jialin.hau@unh.edu \\
+%   University of New Hampshire \AND
+%   Marek Petrik \email mpetrik@cs.unh.edu \\
+%   University of New Hampshire  \AND
+%   Mohammad Ghavamzadeh \email ghavamza@google.com \\ 
+%   Google Research
+% }
+
+\begin{document}
+
+\twocolumn[
+\aistatstitle{Entropic Risk Optimization in Discounted MDPs}
+\aistatsauthor{Jia Lin Hau \And Marek Petrik \And Mohammad Ghavamzadeh }
+\aistatsaddress{
+  University of New Hampshire\\
+  Durham, NH
+  \And
+  University of New Hampshire and \\
+  Google Research
+  \And
+  Google Research\\
+  Mountain View, CA} ]
+
+% \runningtitle{...}
+% \runningauthors{...}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstract} %
+
+
+Risk-averse Markov Decision Processes~(MDPs) have optimal policies that achieve high returns with low variability, but these MDPs are often difficult to solve. Only a few risk-averse objectives admit a dynamic programming~(DP) formulation, which is the mainstay of most MDP and RL algorithms. 
+We derive a new DP formulation for discounted risk-averse MDPs with Entropic Risk Measure~(ERM) and Entropic Value at Risk~(EVaR) objectives. Our DP formulation for ERM, which is possible because of our novel definition of value function with time-dependent risk levels, can approximate optimal policies in a time that is polynomial in the approximation error. We then use the ERM algorithm to optimize the EVaR objective in polynomial time using an optimized discretization scheme. Our numerical results show the viability of our formulations and algorithms in discounted MDPs. 
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{INTRODUCTION}
+\label{ent:sec:intro}
+
+A major concern in high-stakes applications of reinforcement learning~(RL), such as those in healthcare or finance, is to quantify the risk associated with the variability of returns. Since the standard expected objective does not capture the risk of random returns, \emph{concave risk measures} have emerged as one of the most popular tools to quantify this risk in RL and beyond. They are sufficiently general to capture a wide range of stakeholder preferences and are more computationally convenient than many other alternatives~\cite{Follmer2016}. Conditional value-at-risk (CVaR) is the best-known concave risk measure~\cite{Follmer2016,Shapiro2014} and the most commonly used to model risk aversion in MDPs~\cite{Bauerle2022,Bauerle2011,Angelotti2021,Bisi2022,Brown2020,Chow14AC,Chow2015,Chow2018a,Lobo2021,Tamar2014,Tamar2015,Zhang2021a,Hiraoka2019,Santara2018,Osogami2012}.
+
+The popularity of CVaR is mainly due to its intuitive interpretation as the expectation of the undesirable tail of the return random variable. Alas, solving risk-averse MDPs with the CVaR objective~(CVaR-MDP) poses a difficult optimization problem. One can only formulate a dynamic program (DP) and a value function when the state space is augmented with an additional continuous variable~\cite{Pflug2016,Pflug2016a,Bauerle2011,Li2022}, which significantly complicates the computation of the value function and the implementation of the policy.
+
+A popular remedy for the complexity of CVaR-MDPs is to use \emph{nested}, also known as \emph{iterated} or \emph{Markov}, CVaR risk measure~\cite{Defourny2008,Osogami2011,Bauerle2022}. MDPs with a nested CVaR objective admit a value function that can be solved efficiently using DP. Unfortunately, nested CVaR approximates CVaR poorly and has several properties that make it impractical, e.g.,~it is difficult to interpret and is not law-invariant. The latter property is because the risk value also depends on the model dynamics and not only on the probability distribution of the returns~\cite{Follmer2016}.
+
+In this paper, we propose new algorithms for solving risk-averse discounted MDPs with two \emph{entropic concave risk measures}: the entropic risk measure (ERM)~\cite{Follmer2016} and the entropic value-at-risk (EVaR)~\cite{Ahmadi-Javid2012,Follmer2016}. Entropic risk measures are important alternatives to CVaR but their behavior in dynamic decision domains, like MDPs, is not yet well understood. Prior work on entropic risk measures in dynamic decision-making has been limited to ERM in undiscounted and average-reward MDPs~\cite{Borkar2002a,neu2017unified}, ERM for stochastic programs~\cite{Dowson2021}, and nested EVaR-constrained models~\cite{Ahmadi2021a,Ahmadi2021b,Dixit2021}. We believe this paper is the first work that investigates non-nested entropic risk measures in the {\em discounted} setting, which is the typical objective in RL. 
+
+We make two main contributions in this paper. As the first one, we show in \cref{ent:sec:rasr-erm} that in a discounted ERM-MDP, there exists an \emph{optimal deterministic Markov policy} and an \emph{optimal value function} that can be computed using \emph{dynamic programming}. It is well-known that ERM is unique among law-invariant risk measures~\cite{Kupper2006} in that it satisfies the tower property~(see \cref{ent:thm:tower-erm}). However, the challenge with deriving DP equations with ERM in the discounted setting is that ERM is not positively-homogeneous, which makes it impossible to account for the discount factor. We hypothesize that this is the reason most prior work on ERM-MDPs have focused on undiscounted objectives~\cite{Borkar2002a,neu2017unified}, despite the popularity of discounting. Our main innovation in deriving the DP formulation is to compute a value function that uses \emph{time-dependent risk levels} that decay exponentially over time to compensate for the discount factor. The DP is optimal for finite-horizon objectives and computes optimal infinite-horizon policies to a tolerance $\delta$ in $O(S^2 A \log(1/\delta))$ time, where $S$ and $A$ are the number of states and actions in the MDP.
+
+As the second contribution, we show in \cref{ent:sec:rasr-evar} that in a discounted EVaR-MDP, there exists an \emph{optimal deterministic Markov policy} and a policy that is arbitrarily close to optimal can be computed using a sequence of \emph{dynamic programs}. This is particularly surprising because EVaR does not satisfy the tower property~(\cref{ent:thm:tower-erm}), which is required for the existence of DP optimality equations. To show this result, we reduce solving the EVaR-MDP to solving a specific sequence of ERM-MDPs. In particular, our EVaR algorithm runs in $O(S^2 A (\frac{\log(1/\delta)}{\delta})^2)$ time. To the best of our knowledge, this is the first polynomial-time approximate algorithm for computing history-independent policies for coherent law-invariant risk measures in discounted MDPs.
+
+Concurrently with our work, a state-augmentation approach has been proposed for solving discounted EVaR-MDPs~\cite{Ni2022,Ni2022a}. This approach to EVaR-MDPs is inspired by a state augmentation method for solving CVaR-MDPs~\cite{Chow2015}. \citet{Ni2022} states that the augmented EVaR-MDP Bellman operator is optimal with a sufficiently fine discretization of the augmented state. However, we show counterexamples to the optimality of these approaches in both EVaR-MDPs and CVaR-MDPs~\cite{Hau2023a}.
+
+Our empirical results in \cref{ent:sec:empirical} confirm the efficacy of our algorithms. They outperform other techniques not only when evaluated in terms of ERM and EVaR metrics but also in terms of CVaR and VaR. This is not surprising because EVaR-MDP is easier to optimize than CVaR-MDP, and EVaR closely approximates CVaR and VaR~\cite{Ahmadi-Javid2012}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{BACKGROUND} 
+\label{ent:sec:preliminaries}
+
+This section overviews the properties of MDPs and risk measures that we will need in the remainder of the paper.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Markov Decision Processes}
+\label{ent:subsec:MDP}
+
+We assume a problem formulated as a discounted MDP, defined by the tuple $(\states, \actions, r, p, s_0, \gamma)$, where $\states = 1{:}S$ and $\actions = 1{:}A$ are the set of states and actions. The expression $a{:}b$ denotes a sequence, or a set, $a, a+1, \dots , b$. The reward function $r\colon \states \times \actions \to \Real$ represents the reward received in each state after taking an action. The transition probabilities are $p\colon\states \times \actions \to \Delta^S$, where $\Delta^S$ is the probability simplex in $\Real^S$. Finally, $s_0\in \states$ is the initial state and $\gamma \in (0,1]$ is the discount factor.
+
+The most-general solution to an MDP is a randomized history-dependent policy that at each time-step prescribes a distribution over actions as a function of the history up to that step~\cite{Puterman2005}. We use $\Pi_{HR}$ and $\Pi_{HD}$ to denote the sets of all history-dependent randomized and deterministic policies, respectively. A \emph{randomized Markov} policy depends only on the time-step $t$ and current state $s_t$ as $\pi=(\pi_t)_{t=0}^{T-1}$, where $\pi_t\colon \states \to \Delta^A$. A policy $\pi$ is \emph{stationary} when it is time-independent (all $\pi_t$'s are equal), in which case we omit the time subscript. We denote by $\Pi_{MR}$ and $\Pi_{SR}$, the sets of Markov and stationary randomized policies, and by $\Pi_{MD}$ and $\Pi_{SD}$ their deterministic counterparts. %corresponding sets of Markov and stationary deterministic policies. . 
+
+A common goal in an MDP is to maximize the discounted sum of rewards received by following a policy. We use $\mathfrak{R}_{t{:}T}^\pi(s)$ to denote the random \emph{return} of a policy $\pi$ from time-step $t$ to $T$ starting at state $s\in \states$, and define it as
+%
+\begin{equation} \label{ent:eq:return}
+    \mathfrak{R}_{t{:}T}^\pi(s) \;=\; \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot \;\overbrace{r(S_{t'},A_{t'})}^{R_{t'}^\pi} \mid S_t = s \; , %= \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'}^{\pi}, A^{\pi}_{t'})~, 
+\end{equation}
+%
+where $S_{t'}\sim p(\cdot|S_{t'-1},A_{t'-1})$, $A_{t'} \sim \pi_{t'}(\cdot|S_{t'})$, and $R_{t'}^{\pi}$ are the random variables of state visited, action taken, and reward received at a time-step $t'\in t{:}T{-}1$. We refer to $T \in \mathbb{N}^+ \cup \{\infty\}$ as the horizon with $T = \infty$ indicating an infinite-horizon objective. When $T = \infty$, we restrict the discount factor to $\gamma  < 1$ to guarantee that $\mathfrak{R}_{t{:}T}^\pi$ is finite. While a discounted ($\gamma < 1$) finite-horizon objective is seldom used in practice, we use it later in the paper as an intermediate step for solving the infinite-horizon objective. Finally, we use $\vspan = (\max_{s\in \states,a\in \actions} r(s,a) - \min_{s\in \states,a\in \actions}r(s,a))/(1-\gamma)$ to denote the maximum range (span semi-norm) of the return random variable. 
+
+In standard risk-neutral MDPs, the objective is to maximize the \emph{expected value} of the return random variable $\mathfrak{R}_T^{\pi}= \mathfrak{R}_{0{:}T}^{\pi}(s_0)$, that is,
+%
+\begin{equation} \label{ent:eq:risk-neutral-rl}
+\max_{\pi \in \Pi_{HR}} \, \E \left[  \mathfrak{R}^{\pi}_T \right] ~.
+\end{equation}
+%
+We denote the optimal policy in~\eqref{ent:eq:risk-neutral-rl} by $\pi\opt$. Most MDP algorithms rely on the concept of a value function in one way or another. The value function $v^{\pi}=(v^\pi_t)_{t=0}^T$ for a policy $\pi\in \Pi_{MD}$ is a set of value functions $v^\pi_t\colon \states \to \Real,\;t \in 0{:}T$, each representing the expected return from a time-step $t$ to the horizon $T$. For each $s\in\states$, we may write the value function $v^\pi$ as
+%
+\begin{equation}\label{ent:eq:v-pi}
+v_t^{\pi}(s) \;=\; \E \left[\mathfrak{R}_{t{:}T}^{\pi}(s) \right],
+\end{equation}
+%
+where $A\sim\pi(\cdot|s)$, $S'\sim p(\cdot|s,A)$, and $v_T(s) =  0$. The optimal value function $v\opt$ is simply the value function of the optimal policy $\pi^\star$: $v\opt_t = v^{\pi\opt}_t,\;\forall t \in 0{:}T$. 
+Both the value function of a policy $\pi$ and the optimal value function satisfy Bellman equations (for all $s\in \states$ and all $t\in 0{:}T{-}1$): 
+%
+\begin{equation}
+\label{ent:eq:dynamic-expected}
+\begin{aligned} 
+  v_t^{\pi}(s) &\;=\; \E \left[r(s,A) + \gamma\cdot v_{t+1}^{\pi}(S') \right], \\
+  v\opt_t(s)  &\; =\;  \max_{a\in \actions}\,  \E \left[r(s,a) + \gamma \cdot  v_{t+1}\opt(S') \right],
+\end{aligned}
+\end{equation}
+%
+which allow us to compute them efficiently using DP. For the infinite-horizon setting ($T=\infty$ and $\gamma < 1$), one can show that there exists an optimal deterministic stationary policy $\pi\opt \in \Pi_{SD}$ and the value functions are also stationary:  $v^\pi = v^\pi_t$ and $v\opt = v\opt_t$, for all $t = 0{:}T{-}1$.
+
+Formulating the DP equations in~\eqref{ent:eq:dynamic-expected} is only possible because of three important properties of the expectation operator~\cite{Puterman2005,Shapiro2014}. In particular, the expectation operator $\mathbb E[\cdot]$ is monotone, positive homogeneous, and satisfies the tower property. It is \emph{monotone} because $\E[X] \ge \E[Y]$ whenever $X \ge Y$, it is \emph{positively homogeneous} because $\E[c\cdot X] = c\cdot\E[X]$, and it satisfies the \emph{tower property} because $\E[\E[X|Y]] = \E[X]$. In these equations, $X$ and $Y$ are any two random variables and $c$ is a positive constant.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Concave Risk Measures}
+\label{ent:subsec:risk-measure}
+
+Concave risk measures are a generalization of the expectation operator $\E[\cdot]$ that can account for the variability of random variables. Formally, a concave risk measure $\psi[\cdot]$ is defined as a mapping $\risko\colon \mathbb{X} \to \mathbb{R}$ from the set of real-valued random variables $\mathbb{X}$ to real numbers that is \emph{concave}, \emph{monotone}, and \emph{translation invariant}~\cite{Follmer2016}. We summarize some of the most relevant risk measures and their properties in \cref{ent:secapp:risk-measure-prop}.
+
+\paragraph{Entropic Risk Measure (ERM)} is the first risk measure we study in this paper. ERM is a {\em concave} risk measure with a parameter $\beta\in \Real_+ \cup \{\infty\}$. It is defined for a random variable $X \in \mathbb{X}$ as~\cite{Follmer2016}\footnote{Note that the ERM definition in~\eqref{ent:eq:defn_ent_risk} is for rewards; the definitions for cost does not negate the random variable $X$~\cite{Follmer2016,Shapiro2014}.}
+%
+\begin{align} \label{ent:eq:defn_ent_risk}
+  \erm{\beta}{X} = - \beta^{-1} \cdot \log \Bigl( \E \left[e^{-\beta\cdot  X} \right] \Bigr).
+\end{align}
+% 
+For the risk level $\beta=0$, ERM equals to the expectation: $ \erm{0}{X} = \lim_{\beta \to 0^{+}} \erm{\beta}{X} = \E[X] $, while for $\beta\rightarrow\infty$, ERM equals to the minimum value of the random variable $X$: $\erm{\infty}{X} = \operatorname{ess} \inf[X]$. %\mgh{I don't think the next sentence is needed. It doesn't give much info.} ERM is a simple risk measure and is the certainty equivalent of a logarithmic certainty equivalent from the framework of expected utilities~\cite{Ben-Tal2007}.
+ERM is {\em monotone} and satisfies the {\em tower property}. In fact, ERM is the only law-invariant risk measure that satisfies the tower property~\cite{Kupper2006}. Since we heavily use this property of ERM in our results, we state it in the following theorem and report its proof in \cref{ent:app:sec:prelim}. 
+
+\begin{theorem}[Tower Property] \label{ent:thm:tower-erm}
+For any two random variables $X_1,X_2\in\mathbb X$, we have
+%
+\[\erm{\beta}{X_1} \;=\; \erm{\beta}{\erm{\beta}{X_1 \mid X_2}},\]
+%
+where the conditional ERM is defined analogously to a conditional expectation (see  \cref{ent:def:conditional-erm}).
+\end{theorem}
+
+Despite the properties listed above, ERM is rarely employed in practice because it is \emph{not positively homogeneous}, that is, $\erm{\beta}{c\cdot X}\neq c\cdot\erm{\beta}{X}$, which gives rise to undesirable risk preferences. For instance, a decision-maker guided by ERM may prefer an outcome $X$ over $Y$ when the profit is measured in dollars: $\erm{\beta}{X} > \erm{\beta}{Y}$, and yet the same decision-maker may prefer $Y$ over $X$ when the profit is measured in cents: $\erm{\beta}{100 \cdot X} < \erm{\beta}{100 \cdot Y}$. We analyze ERM primarily because it has favorable properties in dynamic decision-making, such as the tower property (mentioned above), and more importantly, we use it as a building block for our EVaR analysis.
+
+%\begin{figure}\label{ent:fig:dual-comparison}
+% \centering
+% \includegraphics[width=\linewidth]{Figures/Chapter5/distributions}
+%  \caption{Optimal dual distributions $\xi\opt$ for CVaR and EVaR.}
+%\end{figure}
+
+\paragraph{Entropic Value-at-Risk (EVaR)} is the second risk measure we study. EVaR was proposed as the tightest approximation of the popular value-at-risk (VaR) using the Chernoff inequality~\cite{Ahmadi-Javid2012}. EVaR is \emph{concave}, and unlike ERM, {\em positively homogeneous}, which makes it a \emph{coherent risk measure}. EVaR with a confidence parameter $\alpha\in [0,1)$ for a random variable $X \in \mathbb{X}$ is defined as~\cite{Follmer2016,Ahmadi-Javid2012}
+%
+\begin{equation} \label{ent:eq:defn_evar}
+\evar{\alpha}{X} = \sup_{\beta > 0}\, \left(\erm{\beta}{X} + \frac{1}{\beta} \log(1-\alpha)\right).
+\end{equation}
+%
+The meaning of EVaR's confidence level $\alpha$ is consistent with the level in value-at-risk (VaR) and conditional value-at-risk (CVaR), and we have $\evar{0}{X} = \E[X]$ and $\lim_{\alpha\rightarrow 1}\evar{\alpha}{X} = \operatorname{ess}\inf[X]$. Computing the supremum in~\eqref{ent:eq:defn_evar} is relatively easy because it involves maximizing a concave function over a single parameter (see proposition~2.11 in~\citealt{Ahmadi-Javid2017}).
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{Figures/Chapter5/approximation}
+\vspace{-0.1in}
+  \caption{Comparison of CVaR, EVaR, and nCVaR (defined in Sec.~\ref{ent:sec:risk-MDP}) of the return random variable $\mathfrak{R}_T$ when all $T=5$ immediate rewards are normally distributed.}
+  \label{ent:fig:nested-approximation}
+\end{figure}
+
+There are several ways to give an intuitive explanation of what EVaR measures. First, as mentioned above, EVaR can be seen as the tightest pessimistic approximation of both VaR and CVaR in the Chernoff bound sense~\cite{Ahmadi-Javid2012}. In many settings, as the one depicted in \cref{ent:fig:nested-approximation}, EVaR approximates CVaR very closely. We are not aware, however, of a systematic analysis of this approximation error. Second, the {\em robust representation} of EVaR has a compelling interpretation in terms of a worst-case expectation to a distribution from a KL-divergence ball~\cite{Ahmadi-Javid2012}:
+%
+\begin{equation*} 
+\label{ent:eq:defn_evar-dual}
+\evar{\alpha}{X} = \inf_{\xi \ll f} \Big\{\E_{\xi } [X] \mid  \kl(\xi \| f) \le \log \big( \frac{1}{1-\alpha} \big) \Big\},
+\end{equation*}
+%
+%where $\kl$ is the KL-divergence and 
+where $\ll$ denotes the absolute continuity of probability measures. The absolute continuity $\ll$ ensures that the KL divergence is well-defined. 
+
+%\mgh{We need a bit more explanation for~\eqref{ent:eq:defn_evar-dual}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Risk-averse MDPs}
+\label{ent:sec:risk-MDP}
+
+The objective in risk-averse MDPs is similar to the one in~\eqref{ent:eq:risk-neutral-rl} for the risk-neutral case with the expectation operator $\E[\cdot]$ replaced with an appropriate risk measure $\psi[\cdot]$:
+%
+\begin{equation} \label{ent:eq:risk-averse-rl-ent}
+  \max_{\pi\in \Pi_{HR}} \, \risk{\mathfrak{R}_{T}^\pi}. 
+\end{equation}
+%
+Although this may appear as a small change compared to~\eqref{ent:eq:risk-neutral-rl}, it has profound implications on the complexity of the solution. Recall that the DP equations for MDPs exist because $\E[\cdot]$ is monotone, positively homogeneous, and satisfies the tower property. Alas, most interesting concave risk measures do not satisfy all these properties simultaneously, as shown in \cref{ent:tab:risk_measure_props}, which makes it difficult to solve the optimization problem in~\eqref{ent:eq:risk-averse-rl-ent}.
+
+\begin{table}
+  \caption{$\!$Properties of representative concave risk measures.}  \label{ent:tab:risk_measure_props}
+  \centering
+  \begin{tabular}{l|ccc}
+    \toprule
+    Risk measure & Law Inv. & Tower P. & Pos. Hom. \\
+    \midrule
+    $\mathbb{E}$, Min & \cmark & \cmark & \cmark \\
+    ERM & \cmark & \cmark & \xmark \\
+    CVaR & \cmark & \xmark & \cmark \\
+    EVaR & \cmark & \xmark & \cmark \\
+    Nested CVaR & \xmark & \cmark & \cmark \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+A common way to formulate DP equations for risk-averse MDPs is to use  \emph{nested} risk measures~\cite{Shapiro2014}, also known as Markov~\cite{Ruszczynski2010}, iterated~\cite{Osogami2011}, or recursive~\cite{Bauerle2022} risk measures. For instance, the nested CVaR is informally defined as 
+%
+\begin{equation*}
+\operatorname{nCVaR}_{\alpha}[\mathfrak{R}^{\pi}_T] = \cvar{\alpha}{ R_0^\pi + \gamma \cvar{\alpha}{R_1^{\pi} + \dots }}.
+\end{equation*}
+%
+When the nested risk measure is properly formalized, one can compute the optimal value function using DP equation
+%
+\begin{equation*}
+  v\opt_t(s)  =  \max_{a\in \actions}\,  \cvar{\alpha} {r(s,a) + \gamma \cdot  v_{t+1}\opt(S') },
+\end{equation*}
+%
+which is similar to that in~\eqref{ent:eq:dynamic-expected} for risk-neutral MDPs
+
+Despite their favorable computational properties, nested risk measures suffer from an important drawback in that they are not \emph{law-invariant}. Therefore, the risk value is not solely a function of the distribution of the return $\mathfrak{R}^{\pi}_T$, and is affected by the MDP's dynamics in a non-trivial way that is difficult to anticipate and interpret. The impact of law invariance on risk preferences is well-documented in the risk literature and can actually cause an agent to prefer returns with higher variability~\cite{Iancu2015}.
+
+Nested risk measures are poor approximations of static risk measures. To illustrate this fact, \cref{ent:fig:nested-approximation} depicts the values of CVaR, EVaR, and nCVaR for $\mathfrak{R}_4 = R_0 + \dots  + R_4$ with $R_t$'s normally distributed with $\mu =0$ and $\sigma = 1$. 
+
+
+Prior literature has explored several other approaches to optimizing risk in MDPs besides nested risk measures. As mentioned in the introduction, one can augment the state space in order to approximate the optimal policy in MDPs with VaR or CVaR objectives~\cite{Pflug2016,Pflug2016a,Bauerle2011,Li2022}. This is a powerful approach, but it can be very computationally intensive and return policies that depend on history. History-dependent policies can be complex and difficult to interpret and deploy. It is also possible to use gradient-based algorithms, such as policy gradient, to directly optimize objective~\eqref{ent:eq:risk-averse-rl-ent}~(e.g.~\citealt{Tamar2015,Tamar2012pgvariance}). These algorithms often work well but lack any guarantees and usually converge to inferior local optima. Finally, many other notions of risk have been proposed and optimized, from utility-based risk~\cite{Ben-Tal2007}, to variance-based risk~\cite{Prashanth13AC,Tamar2013,Prashanth16VC}, to cautious RL~\cite{Zhang2021a}. These other notions of risk make very different modeling assumptions which makes it difficult to compare them with our framework that is based on coherent risk measures.
+
+%Although EVaR is not dynamically consistent, we show in \cref{ent:sec:rasr-evar} that it can be optimized using a DP by representing it in terms of ERM. Unlike ERM, EVaR is positively-homogeneous, and thus, coherent, which makes its riskiness independent of the scale of the random variable. Moreover, the meaning of its risk level $\alpha$ is consistent with those used in VaR and CVaR, with $\evar^0[X] = \E[X]$ and $\lim_{\alpha\rightarrow 1}\evar{\alpha}{X} = \operatorname{ess}\inf[X]$. Finally, since $\evar{\alpha}{X} \leq \cvar{\alpha}{X} \leq \var{\alpha}{X}$, EVaR can be interpreted as the tightest conservative approximation that can be obtained from the Chernoff inequality for VaR and CVaR \cite{Ahmadi-Javid2012}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{DISCOUNTED MDPs WITH ERM OBJECTIVE}
+\label{ent:sec:rasr-erm}
+
+In this section, we study the fundamental properties of discounted ERM-MDPs and describe a new DP formulation. In particular, we show that if one defines an optimal value function for ERM-MDP with a specific time-dependent risk, then it can be computed using DP. We report the proofs for this section in \cref{ent:app:sec:ERM}.
+
+The objective in this section is to compute a policy that maximizes the ERM of the return random variable $\mathfrak{R}_T^\pi$ at some given risk level $\beta \ge 0$. That is, the objective is the optimization in~\eqref{ent:eq:risk-averse-rl-ent} for risk-averse MDPs with the risk measure $\psi[\cdot]$ set to $\erm{\beta}{\cdot}$:
+%
+\begin{equation} \label{ent:eq:EVaR-MDP-erm-return}
+  \max_{\pi\in\Pi_{HR}}  \erm{\beta}{ \mathfrak{R}_{T}^\pi } .
+\end{equation}
+%
+Although we formulate the objective in~\eqref{ent:eq:EVaR-MDP-erm-return} in terms of history-dependent randomized policies, we will prove later in this section that there always exists a Markov (history-independent) deterministic policy for~\eqref{ent:eq:EVaR-MDP-erm-return}. In the remainder of this section, we first treat the finite-horizon case ($T<\infty$) and then extend the obtained results to the discounted infinite-horizon case ($T=\infty$ and $\gamma < 1$).
+
+The closest objective to~\eqref{ent:eq:EVaR-MDP-erm-return} studied in prior work is the ERM-MDP with an \emph{average-reward} objective~\cite{Borkar2002a}. Value iteration, policy iteration, and even q-learning~\cite{Borkar2002Qrisk} have been studied for this objective. However, the average reward criterion is not as popular in RL as the discounted infinite horizon objective. In addition, the example below illustrates why the existing formulations do not readily extend to discounted ERM-MDPs.
+
+Before defining the value function and deriving the corresponding DP equations for ERM-MDP, we describe a simple example that illustrates how one may use the tower property to derive such equations. The example also illustrates the challenge that discounting poses in ERM-MDP.
+\begin{example}\label{ent:ex:singleaction}
+Consider an MDP with a single action $a$, and thus, a single policy $\pi$. Assume that the horizon is $T=2$ and the initial state $S_0$ is random. Recall that the return is defined as $\mathfrak{R}_2^{\pi} = r(S_0,a) + \gamma \cdot r(S_1,a)$. When $\gamma = 1$, one can directly use the tower property to decompose the return into value functions as
+%
+\begin{align}
+\erm{\beta}{\mathfrak{R}_2^\pi } &= \erm{\beta}{r(S_0,a) + \gamma \cdot  r(S_1,a)} \nonumber \\
+&\hspace{-0.6in}= \erm{\beta}{ r(S_0,a)  + \erm{\beta}{ \gamma\cdot  r(S_1,a) \mid S_0}} \nonumber \\
+\label{ent:eq:simple-derivation-ph}
+&\hspace{-0.6in}= \erm{\beta}{  r(S_0,a) + \gamma \cdot \erm{\beta}{ r(S_1,a) \mid S_0}} \\
+&\hspace{-0.6in}= \erm{\beta}{  r(S_0,a) + \gamma \cdot v_1(S_1)}, \nonumber
+\end{align}
+%
+where $v_1(S_1) = \erm{\beta}{ r(S_1,a) \mid S_0}$. While the above derivation readily generalizes to the MDP with $\gamma=1$, it is not valid when $\gamma < 1$, because the equality in~\eqref{ent:eq:simple-derivation-ph} requires ERM to be positive homogeneous.
+\end{example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Finite Horizon ERM-MDP}
+\label{ent:subsec:DP-ERM-MDP}
+
+Although ERM is not positively homogeneous, in the following new result we show that it has a similar property if we allow for a change in the risk level.   
+%
+\begin{theorem}[Positive Quasi-homogeneity] \label{ent:thm:pos-quasi-homogen}
+For any random variable $X\in\mathbb X$ and any constant $c \geq 0$, we have 
+%
+\begin{equation}
+\label{ent:eq:PQ-homogeneity}
+\erm{\beta}{c\cdot  X} \;=\; c\cdot \erm{\beta \cdot c}{X}\;.
+\end{equation}
+%
+\end{theorem}
+
+\cref{ent:thm:pos-quasi-homogen} indicates that we can propagate the discount factor $\gamma$ out of ERM in~\eqref{ent:eq:simple-derivation-ph}, if we change the risk level of the inner ERM to $\beta\gamma$. In particular, if we define the value function as $v_1(S_1) = \erm{\beta\cdot \gamma}{r(S_1,a) \mid S_0}$, then the derivation in \cref{ent:ex:singleaction} works for any $\gamma \in (0,1)$. Generalizing this intuition to the full ERM-MDP, we define the value function $v^\pi=(v^\pi_t)_{t=0}^T$ for a policy $\pi = (\pi_t)_{t=0}^{T-1}\in \Pi_{MR}$ and the optimal value function  $v\opt  = (v_t\opt)_{t=0}^T$ in a state $s\in\states$ as follows: 
+%
+\begin{align}
+ \label{ent:eq:erm-rasr-v}
+v^\pi_t(s) &= \erm{\beta\cdot \gamma^{t}} {\mathfrak{R}^{\pi}_{t{:}T}(s)}, \\
+ \label{ent:eq:erm-rasr-v-opt}
+v\opt_t(s)  &= \max_{\pi \in \Pi_{MR}^{t{:}T}} \erm{\beta\cdot \gamma^{t}} { \mathfrak{R}^{\pi}_{t{:}T}(s)},
+\end{align}
+%
+where $\mathfrak{R}^{\pi}_{t{:}T}(s)$ is defined by~\eqref{ent:eq:return} and $\Pi_{MR}^{t{:}T}$ is the set of randomized Markov policies for time-steps $t{:}T{-}1$.
+
+As discussed above, it is important that the risk level in the definition of value function in~\eqref{ent:eq:erm-rasr-v} depends on the time-step $t$. As time progresses, the risk level $\beta\gamma^t$ decreases monotonically and the value function becomes less risk-averse. Recall that in the risk-neutral setting, the risk level is $\beta = 0$ and $\erm{0}{X} = \E[X]$. When we set $\beta=0$ in~\eqref{ent:eq:erm-rasr-v}, the value function becomes independent of $t$ and the value function reduces to that in risk-neutral MDPs. 
+
+The following theorem states the main result of this section. It shows how the value functions defined in~\eqref{ent:eq:erm-rasr-v} and~\eqref{ent:eq:erm-rasr-v-opt} can be efficiently computed by a DP when $T < \infty$. 
+%
+\begin{theorem}[Bellman Equations in ERM-MDP]\label{ent:thm:dynamic-program}
+For any policy $\pi\in \Pi_{MR}$, its value function $v^\pi=(v^\pi_t)_{t=0}^T$ defined in~\eqref{ent:eq:erm-rasr-v} is the unique solution to the following system of equations for all $s\in\states$,
+%
+\begin{align}
+\label{ent:eq:v-erm-pi}
+  v_t^{\pi}(s) &= \erm{\beta \cdot \gamma^t} {r(s,A) + \gamma \cdot  v_{t+1}^{\pi}(S')}
+ % \\ &= \frac{-1}{\beta \gamma^t} \log \sum_{a\in \actions}\sum_{s'\in \states} \pi(a|s) p(s' | s,a) e^{-\beta \gamma^t (r(s,a) +  \gamma v_{t+1}^{\pi}(s'))} \nonumber
+ ,
+\end{align}
+%
+where $A \sim \pi_t(\cdot|s)$, $S' \sim p(\cdot|s,A)$, and $v_T^{\pi}(s) = 0$. Moreover, the optimal value function $v\opt=(v\opt_t)_{t=0}^T$ defined in~\eqref{ent:eq:erm-rasr-v-opt} is the unique solution to the following system of equations for all $s\in\states$,
+%
+\begin{align}
+\label{ent:eq:v-erm-opt}
+  v\opt_t(s) &= \max_{a\in \actions} \; \erm{\beta \cdot \gamma^t} {r(s,a) + \gamma \cdot  v_{t+1}\opt(S') }
+%  \\ &= \max_{a\in \actions} \; \frac{-1}{\beta \gamma^t} \log \sum_{s'\in \states}p(s' | s,a) e^{-\beta \gamma^t (r(s,a) + \gamma v_{t+1}\opt(s')) } \nonumber
+.
+\end{align}
+%
+\end{theorem}
+
+\cref{ent:thm:dynamic-program} suggests several new important and surprising properties for ERM-MDP. First, it shows the existence of value functions, both for any Markov policy and also the optimal value function. Unlike with other risk measures, these value functions do not require that the state space is augmented. Second, the theorem shows that the value function can be computed efficiently using a dynamic program. And finally, the next theorem built on \cref{ent:thm:dynamic-program} shows that there always exists an optimal Markov (as opposed to history-dependent) deterministic policy for the ERM-MDP, and this policy is greedy w.r.t.~the optimal value function.
+
+\begin{theorem}[Optimal Policy in ERM-MDP]\label{ent:th:optimal_deterministic}
+There exists a Markov deterministic optimal policy $\pi\opt = (\pi_t\opt)_{t=0}^{T-1}\in\Pi_{MD}$ for the optimization problem~\eqref{ent:eq:EVaR-MDP-erm-return}, which is greedy w.r.t.~the optimal value function $v\opt$ defined by~\eqref{ent:eq:v-erm-opt}, that is, 
+%
+\begin{equation}\label{ent:eq:pol-greedy}
+\pi\opt_t(s) \in \argmax_{a\in\actions} \,\erm{\beta \cdot \gamma^t} { r(s,a) + \gamma  v\opt_{t+1}(S')},
+\end{equation}
+%
+for all $s\in\states$. Moreover, the optimal value function satisfies that $v^{\pi\opt } = v\opt$.
+\end{theorem}
+
+The existence of a deterministic optimal policy in ERM-MDP is surprising since many risk-averse formulations require randomization~\cite{Delage2019,Lobo2021,Steimle2021a}. Also surprisingly, ERM-MDP does not admit a stationary optimal policy ($\pi^\star$ in~\eqref{ent:eq:pol-greedy} is time-dependent) even when the horizon $T$ is large or infinite. This is in contrast to risk-neutral discounted infinite-horizon MDPs which admit stationary optimal policies.
+
+Given the results of \cref{ent:thm:dynamic-program,th:optimal_deterministic}, we can solve the ERM-MDP objective~\eqref{ent:eq:EVaR-MDP-erm-return} when the horizon is finite ($T<\infty$) by adapting the standard value iteration (VI) algorithm to this setting. This algorithm, whose pseudo-code is shown in \cref{ent:alg:ERM-finite} in Appendix~\ref{ent:app:sec:ERM}, computes the optimal value function $v\opt_t$ backwards in time ($t = T,T-1,\ldots,0$) according to~\eqref{ent:eq:v-erm-opt}. The optimal policy is greedy w.r.t.~$v\opt$ and can be computed by solving the optimization~\eqref{ent:eq:pol-greedy}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Infinite Horizon ERM-MDP}
+\label{ent:subsec:VI-ERM-MDP}
+
+We now turn to deriving an algorithm that can solve the ERM-MDP objective~\eqref{ent:eq:EVaR-MDP-erm-return} when the horizon $T$ is large or infinite. Solving ERM-MDP in the \emph{infinite-horizon} setting is considerably more challenging than in finite-horizon, because the risk level and optimal policy are both time dependent. The simplest way to address this issue is to truncate the horizon at some $T' < \infty$ and resort to an arbitrary policy for any $t > T'$. The main limitation of this approach is that $T'$ may need to be very large to achieve a reasonably-small approximation error. 
+
+In \cref{ent:alg:rasr-vi-inf}, we propose an approximation that is superior to the simple truncation of the planning horizon, described above. \cref{ent:alg:rasr-vi-inf} first computes the optimal risk-neutral value function $v_{\infty}\opt$ and (stationary) policy $\pi_{\infty}\opt$ using value or policy iteration algorithms~\cite{Puterman2005}. It uses policy $\pi_{\infty}\opt$ to act for all time-steps $t > T'$ and value function $v_{\infty}\opt$ to approximate $v\opt_{T'}$. This approach takes advantage of the fact that the risk level $\beta \cdot \gamma^t$ in~\eqref{ent:eq:erm-rasr-v} and~\eqref{ent:eq:erm-rasr-v-opt} approaches $0$ as $t$ gets larger, which means that the ERM value function becomes close to the risk-neutral $v_{\infty}\opt$.  
+
+\begin{algorithm}
+    \KwIn{planning horizon $T' < \infty$, risk level $\beta > 0$}
+    \KwOut{policy $\;\hat\pi\opt = (\hat\pi_t\opt)_{t=0}^\infty\;$ and value function $\;\hat{v}\opt = (\hat{v}_t\opt)_{t=0}^\infty$}
+    Compute $\;v_{\infty}\opt\;$ and $\;\pi_{\infty}\opt \;$ as the optimal solutions to the risk-neutral infinite-horizon discounted problem \;
+    Compute $\;(\tilde{v}\opt_t)_{t=0}^{T'}\;$ and $\;(\tilde{\pi}\opt_t)_{t=0}^{T'-1}\;$ using~\eqref{ent:eq:v-erm-opt} and~\eqref{ent:eq:pol-greedy} with horizon $\;T'\;$ and terminal value $\;\tilde{v}\opt_{T'} = v_{\infty}\opt$ \;
+    Construct a policy $\;(\hat{\pi}\opt_{t})_{t=0}^{\infty}\;$, where $\;\hat{\pi}\opt_t = \pi_{\infty}\opt$ for $\;t \ge T'\;$  and $\;\hat{\pi}\opt_t = \tilde{\pi}\opt_t\;$, otherwise \;
+    Construct $\;\hat{v}\opt\;$ analogously to $\;\hat{\pi}\opt$\;
+\Return{$\;\hat\pi\opt\;$, $\;\hat{v}\opt$}
+  \caption{VI for infinite-horizon ERM-MDP} \label{ent:alg:rasr-vi-inf}
+\end{algorithm}
+
+To quantify the quality of a policy $\hat\pi\opt$ returned by \cref{ent:alg:rasr-vi-inf}, we now derive a bound on its performance loss. In particular, we focus on how quickly the error decreases as a function of the planning horizon $T'$. This bound can be used both to determine the planning horizon and to quantify the improvement of \cref{ent:alg:rasr-vi-inf} over simple truncation. 
+
+\begin{theorem}\label{ent:thm:approx-error}
+The performance loss of the policy $\hat{\pi}\opt$ returned by \cref{ent:alg:rasr-vi-inf} decreases with $T'$ as
+%
+\begin{align}
+\label{ent:eq:perf-bound-VI-ERM}
+\erm{\beta} { \mathfrak{R}_{\infty}^{\pi\opt}  } - 
+\erm{\beta} { \mathfrak{R}_{\infty}^{\hat{\pi}\opt} }
+  \;\le\;
+  \frac{\beta\cdot \gamma^{2 T'} \!\cdot \Delta_\mathfrak{R}^2}{8}~,
+\end{align}
+%
+where $\pi\opt$ is optimal in~\eqref{ent:eq:EVaR-MDP-erm-return} and $\vspan$ is the range of the return random variable $\mathfrak{R}_{\infty}$. Therefore, \cref{ent:alg:rasr-vi-inf} runs in $O(S^2 A \log(1/\delta))$ time to compute a $\delta$-optimal policy.
+\end{theorem}
+
+The proof of \cref{ent:thm:approx-error} reported in \cref{ent:app:sec:ERM} uses the Hoeffding's lemma to bound the error between ERM and expectation, and then propagates it backwards using standard DP techniques. Analysis analogous to \cref{ent:thm:approx-error} shows that when we simply truncate the planning horizon at $T'$ and follow an arbitrary policy thereafter, the performance loss decreases proportionally to $\gamma^{T'}$ as opposed to $\gamma^{2 T'}$ in~\eqref{ent:eq:perf-bound-VI-ERM}. As a result, simple truncation requires a planning horizon $T'$ that is at least twice longer than the one used by \cref{ent:alg:rasr-vi-inf} to achieve the same performance.
+
+\begin{remark}[Quadratic dependence on $\Delta_\mathfrak{R}$]
+An attentive reader may be puzzled by the fact that the bound in \cref{ent:thm:approx-error} scales quadratically with the range of the returns $\Delta_\mathfrak{R}$. Given the quadratic dependence, one can make the relative error arbitrarily small just by shrinking the rewards appropriately. This is indeed true but is less useful than it may seem at the first blush. Since ERM is not positively homogeneous, scaling the rewards can change the optimal policy, unlike in risk-neutral MDPs. To avoid changing the set of optimal policies when scaling the rewards, one also needs to scale the risk parameter $\beta$ appropriately as dictated by \cref{ent:thm:pos-quasi-homogen}. When both $r$ and $\beta$ are scaled simultaneously, the relative error in \cref{ent:thm:approx-error} does not change.
+\end{remark}
+
+In practice, one can compute bounds that are tighter than the one in \cref{ent:thm:approx-error} by computing both an upper-bound on the optimal value function and a lower-bound on the value of the policy. It is easy to see that $v_{\infty }\opt$ is an upper-bound on $v\opt$, which can be used to compute an upper-bound on $v_0\opt$, and therefore, an upper-bound on the performance loss. According to \cref{ent:thm:approx-error}, given an arbitrary desired tolerance $\delta$, one can select $T' \geq \frac{1}{2\log(\delta)} \log(\frac{8 \delta}{\beta \Delta_\mathfrak{R}^2})$ to compute a $\delta$-optimal policy. We give more details on this in \cref{ent:app:sec:ERM}. 
+
+%This bound does not have an analytical form, but our anecdotal experimental results shows that it converges to 0 with an increasing $T'$ even more rapidly than \cref{ent:thm:approx-error}. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{DISCOUNTED MDPs WITH EVaR OBJECTIVE}
+\label{ent:sec:rasr-evar}
+
+In this section, we analyze the EVaR-MDP objective and propose a new DP algorithm to solve it. As mentioned in \cref{ent:sec:preliminaries}, EVaR is preferable to ERM because it is coherent and approximates both VaR and CVaR well. We report the proofs of this section in \cref{ent:app:sec:EVaR}.
+
+The objective in this section is to compute a policy that maximizes the EVaR of the return random variable $\mathfrak{R}_T^\pi$ at some given risk level $\alpha \in [0,1]$. In other words, we are interested in solving the optimization problem in~\eqref{ent:eq:risk-averse-rl-ent} with the risk measure $\psi[\cdot]$ set to $\evar{\alpha}{\cdot}$:
+%
+\begin{equation} \label{ent:eq:EVaR-MDP-evar-return}
+\max_{\pi\in\Pi_{HR}}  \evar{\alpha}{ \mathfrak{R}_{T}^\pi } .
+\end{equation}
+%
+It is important to note that the objective in~\eqref{ent:eq:EVaR-MDP-evar-return} differs from prior work on EVaR in MDPs, which has focused on the nested EVaR objective~\cite{Ahmadi2021a,Ahmadi2021b,Dixit2021}, and thus, does not approximate the static formulation in~\eqref{ent:eq:EVaR-MDP-evar-return} well~\cite{Iancu2015}.
+
+The main challenge in solving~\eqref{ent:eq:EVaR-MDP-evar-return} is that EVaR does not satisfy the tower property (or equivalently, it is \emph{not} dynamically consistent) and cannot be directly optimized using a DP. Our main contribution in this section is to derive an algorithm that solves EVaR-MDP in time that is polynomial in the problem size and the desired accuracy. The main idea of our algorithm is to reduce EVaR-MDP to a specific sequence of ERM-MDP problems. 
+
+Using the definition of EVaR in~\eqref{ent:eq:defn_evar}, we may reformulate the EVaR-MDP objective~\eqref{ent:eq:EVaR-MDP-evar-return} as
+%
+\begin{equation}
+\label{ent:eq:rasr-evar-ref}
+\max_{\pi\in\Pi_{MR}}  \evar{\alpha}{ \mathfrak{R}_{T}^\pi }  = \sup_{\beta > 0} \; h(\beta) 
+\end{equation}
+%
+where the objective function $h\colon  \Real \to \Real$ is defined as
+%
+\begin{equation*}
+  h(\beta) = \max_{\pi\in\Pi_{MR}}\, \left(\erm{\beta}{\mathfrak{R}_{T}^\pi} + \beta^{-1} \cdot \log(1-\alpha) \right).
+\end{equation*}
+%
+We switch the notation to Markov policies, $\Pi_{MR}$, because we will show in Corollary~\ref{ent:cor:evar-markov} that an optimal policy for EVaR-MDP belongs to this class. The equality in~\eqref{ent:eq:rasr-evar-ref} follows by swapping the order of $\max$ and $\sup$ operators. The connection that the reformulation in~\eqref{ent:eq:rasr-evar-ref} establishes between the objectives of EVaR-MDP and ERM-MDP allows us to directly carry over the following properties from the ERM-MDP setting to EVaR-MDP. 
+\begin{theorem} 
+\label{ent:thm:equivalence-evar-erm}
+Let $\pi\opt$ be an optimal solution to the EVaR-MDP in~\eqref{ent:eq:EVaR-MDP-evar-return} and suppose that the supremum is attained. Then, there exists a risk level $\beta\opt \in (0, \infty]$ such that $\pi\opt$ is optimal for ERM-MDP in~\eqref{ent:eq:EVaR-MDP-erm-return} with $\beta = \beta\opt$.
+\end{theorem}
+A similar argument holds also when the supremum is not attained, but requires additional technical developments, which we leave it for a future extended version of this work. 
+
+\begin{corollary} \label{ent:cor:evar-markov}
+There exists an optimal Markov deterministic policy for EVaR-MDP.% in~\eqref{ent:eq:EVaR-MDP-evar-return}.
+\end{corollary}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\linewidth]{Figures/Chapter5/evar_discretized2.pdf}
+\vspace{-0.1in}
+\caption{Function $h$ for the EVaR-MDP described in \cref{ent:prop:non-concave}. The circles indicate the discretized $h(\beta_k)$ according to~\eqref{ent:eq:beta-grids} with $\alpha = 0.5$, $\delta = 0.1$, and $\vspan = 1$.}
+\label{ent:fig:h-example}
+\end{figure}
+
+We are now ready to describe our algorithm for solving the EVaR-MDP objective. Our algorithm, whose pseudo-code is shown in \cref{ent:alg:ERM_EVAR}, optimizes the single-dimensional objective function $h$ in~\eqref{ent:eq:rasr-evar-ref}. Because the function $h$ is not concave in general (see \cref{ent:prop:non-concave} in \cref{ent:app:sec:EVaR}), we cannot use standard one-dimensional algorithms like Brent's method or BFGS. However, we leverage the fact that $h$ is the sum of a non-increasing function and a concave function, and use a discrete grid $\{\beta_k\}_{k=1}^K$ to search over the risk level $\beta$ that can approximate the optimal policy in polynomial time. We define the grid values for each $k\in 1{:}K{-}1$ as
+\begin{equation}\label{ent:eq:beta-grids}
+\beta_1 =  \frac{8 \delta}{ \vspan^2}, \quad \beta_{k+1} = \beta_k \cdot \frac{\log (1-\alpha)}{\beta_k\delta + \log (1-\alpha)},
+\end{equation}
+%
+where $\delta > 0$ is the desired approximation error and $K \in \mathbb{N}$ is sufficiently large to ensure that
+%
+\begin{equation} \label{ent:eq:beta-k-large}
+  \beta_K \ge \frac{-\log (1-\alpha)}{\delta}.
+\end{equation}
+%
+We also assume that $\beta_K$ is trimmed so that~\eqref{ent:eq:beta-k-large} holds with equality. The grid values in~\eqref{ent:eq:beta-grids} are constructed to minimize the suboptimality bound $\delta$ in \cref{ent:thm:rasr-evar-bound} below. \Cref{ent:fig:h-example} depicts an example of a function $h$ for an MDP described in the proof of \cref{ent:prop:non-concave}. The black circles are the values of $h$ at the grid points $\{\beta_k\}_{k=1}^K$ constructed according to~\eqref{ent:eq:beta-grids} with $\delta = 0.1$ and $\vspan = 1$.
+
+\begin{algorithm}[t]
+    \KwIn{Desired error tolerance $\delta$}
+    \KwOut{EVaR-MDP optimized policy $\hat{\pi}\opt$}
+    Let $K$ be the smallest value that satisfies~\eqref{ent:eq:beta-k-large} \;
+    \For{$k = 1,\ldots,K$}{
+    Compute $v^k, \pi^k$ by solving ERM-MDP with risk level $\beta_k$ defined in~\eqref{ent:eq:beta-grids} \;
+    }
+    Let $k\opt \gets \argmax_{k=1{:}K} \, v_0^k(s_0) + \beta_k^{-1} \cdot \log (1-\alpha)$\;
+    \Return{Policy $\;\hat{\pi}\opt = \pi^{k\opt}$}
+    \caption{Algorithm for EVaR-MDP}  \label{ent:alg:ERM_EVAR}
+\end{algorithm}
+
+The following theorem shows that \cref{ent:alg:ERM_EVAR} runs in time that is polynomial in $1/\delta$ and computes a policy $\hat{\pi}\opt$ whose return has an EVaR that is $\delta$-close to optimal.
+
+\begin{theorem} \label{ent:thm:rasr-evar-bound}
+For any $\delta > 0$, \cref{ent:alg:ERM_EVAR} runs in $O(S^2 A (\frac{\log(1/\delta)}{\delta})^2)$ time and returns a policy $\hat{\pi}\opt$ such that
+%
+\begin{equation*}
+\evar{\alpha}{ \mathfrak{R}_{\infty}^{\pi\opt} } - \evar{\alpha}{ \mathfrak{R}_{\infty}^{\hat{\pi}\opt} } \le \delta,
+\end{equation*}
+%
+where $\pi\opt$ is optimal for~\eqref{ent:eq:EVaR-MDP-evar-return}.
+\end{theorem}
+
+\Cref{ent:thm:rasr-evar-bound} establishes the time complexity that \cref{ent:alg:ERM_EVAR} needs to compute a $\delta$-optimal EVaR policy. Note that the bound in \cref{ent:thm:rasr-evar-bound} takes into account both the errors due to the discretization in~\eqref{ent:eq:beta-grids} and the truncated horizon in \cref{ent:thm:approx-error} when solving the ERM-MDPs. The proof of \cref{ent:thm:rasr-evar-bound} is reported in \cref{ent:app:sec:EVaR}. 
+
+We report \cref{ent:alg:ERM_EVAR} for solving EVaR-MDP because it is conceptually simple and relatively easy to analyze. However, significant computational improvements are possible in this setting. One approach to accelerate \cref{ent:alg:ERM_EVAR} is by realizing that \cref{ent:alg:rasr-vi-inf} computes value functions for multiple risk levels $\beta,\gamma\beta,\gamma^2\beta,\ldots$. For example, running \cref{ent:alg:rasr-vi-inf} with $\beta = 0.5$ computes $v_0$ with risk level $\beta=0.5$, $v_1$ with risk level $\beta=0.5\gamma$, $v_2$ with risk level $\beta=0.5\gamma ^2$ and so on. This observation can significantly reduce the computational effort while introducing an additional small error due to the effective approximate horizon $T'$ being different for different grids over the risk level $\beta$. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{NUMERICAL EVALUATION}
+\label{ent:sec:empirical}
+
+In this section, we evaluate our EVaR-MDP algorithm numerically on several tabular MDPs. We focus on the EVaR-MDP objective for two reasons. First, as discussed in \cref{ent:sec:preliminaries}, EVaR is a more practical risk measure than ERM because it is coherent and approximates the popular VaR and CVaR well. Second, the EVaR-MDP algorithm~(\cref{ent:alg:ERM_EVAR}) also evaluates the ERM-MDP algorithm~(\cref{ent:alg:rasr-vi-inf}) since it uses it as a subroutine. 
+
+We assume that the objective is to solve an EVaR-MDP for a confidence level $\alpha=0.9$. That is, we seek to find a policy $\pi$ that maximizes $\evar{0.9}{\mathfrak{R}_{T}^{\pi}}$. The confidence level $\alpha=0.9$ is a common choice in the risk-averse literature and the results are qualitatively insensitive to its choice. The numerical evaluation assumes a finite horizon $T=100$, which makes it possible to evaluate the risk of $\mathfrak{R}^{\pi}_T$ by simulation. We sample 100,000 episodes of $\mathfrak{R}^{\pi}_T$ for this evaluation.
+
+To understand how the components of \cref{ent:alg:ERM_EVAR} contribute to the quality of its solution, we perform a small ablation study that compares it with two simplified algorithms: {\bf 1)} \emph{naive grid} that uses a uniform grid of values $\beta_k,\;k = 1{:}K$, such that $\beta_1 = 0$ and $\beta_K = 10$, instead of what we propose in~\eqref{ent:eq:beta-grids}, and $K$ is set to the same value as in~\eqref{ent:eq:beta-grids}, and {\bf 2)} \emph{naive level} that uses the optimized grid but does not adjust the risk level with the time-step when it solves ERM-MDPs. \Cref{ent:alg:ERM_EVAR} uses the optimized grid in~\eqref{ent:eq:beta-grids} with $\delta$ and $\vspan$ values given in \cref{ent:sec:experiments-detail}.
+
+In addition to the ablation study, we also compare \cref{ent:alg:ERM_EVAR} with several risk-averse algorithms that optimize objectives related to EVaR-MDPs. Specifically, we compare it with \emph{risk-neutral} MDP, \emph{nested CVaR}~\cite{Bauerle2022}, and \emph{nested EVaR}~(related to \citealt{Ahmadi2021b}), both with $\alpha=0.9$, and finally \emph{ERM} (\cref{ent:alg:ERM-finite}) and \emph{nested ERM}, both with $\beta=0.5$. The parameter $\alpha$ was chosen to match the EVaR objective, but the parameter $\beta=0.5$ is chosen arbitrarily since no general method exists to find a $\beta$ that matches a given $\alpha$. All the above methods compute Markov policies. We also compare \cref{ent:alg:ERM_EVAR} with \emph{augmented CVaR}~\cite{Chow2015} that computes a history-dependent policy for CVaR-MDPs. We implemented the augmented CVaR method using the faster quantile-based approach described in section 4 of \citet{Li2022}. All algorithms were implemented in Julia with the exception of augmented MDP which was implemented both in R and Julia. The R implementation using quantiles was significantly faster than the implementation of the original algorithm~\cite{Chow2015} in Julia 1.8. 
+
+As described in the introduction the augmented CVaR-MDP~\cite{Chow2015} may not compute an optimal policy~\cite{Hau2023a}. While augmented CVaR-MDP is guaranteed to evaluate policies correctly, the dynamic program overestimates the true optimal value function and computes suboptimal policies. This is one possible reason for why EVaR-MDP achieves a better CVaR objective than the augmented CVaR-MDP. We do not compare with the augmented EVaR-MDP~\cite{Ni2022,Ni2022a} for two main reasons. First, this algorithm is even slower than the augmented CVaR-MDP because one needs to solve a conic optimization instead of a linear optimization in each time-step. Second, this augmented EVaR-MDP is not guaranteed to compute a correct (or even approximately correct) value function even when the policy is fixed~\cite{Hau2023a}.
+
+To obtain a holistic picture of the relative performance of the algorithms, we selected a diverse set of domains with varying numbers of actions, discount factors, and levels of uncertainty. These domains have all been used in risk-averse and robust RL literature and are as follows: \emph{machine replacement}~(MR)~\cite{Delage2009}, \emph{gamblers ruin}~(GR)~\cite{Bauerle2011,Li2022}, two classic \emph{inventory} management problems~(INV1) and~(INV2)~\cite{Ho2021a}, and  \emph{river-swim}~(RS)~\cite{Strehl2008model}. 
+
+\begin{table}
+\caption{$\evar{0.9}{\mathfrak{R}^{\pi}_{T}}$ for $\pi$ returned by each method.} \label{ent:tab:evar_09}
+\centering
+\begin{small}
+\begin{tabular}{l|rrrrr}
+\toprule
+\multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} & \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+  \midrule
+  \textbf{\cref{ent:alg:ERM_EVAR}} & \textbf{-6.73} & \textbf{5.34} & \textbf{67.4} & \textbf{189} & \textbf{303} \\ 
+  Naive grid & \textbf{-6.87} & \textbf{5.37} & 43.2 & \textbf{189} & \textbf{303} \\ 
+  Naive level & -10.00 & 4.17 & 64.6 & \textbf{188} & 217 \\ 
+  \midrule
+   Risk neutral & \textbf{-6.53} & 2.29 & 40.6 & \textbf{186} & \textbf{300} \\
+   Nested CVaR & -10.00 & -0.02 & -0.0 & 132 & 217 \\ 
+   Nested EVaR & -10.00 & 4.61 & -0.0 & 164 & 217 \\ 
+   ERM & \textbf{-6.72} & 5.19 & 50.7 & 178 & 217 \\ 
+   Nested ERM & -10.00 & 4.76 & 24.9 & 150 & 217 \\ 
+  \midrule
+   Augmented CVaR & -7.06 & 3.64 & 49.0 & 82 & 93 \\
+  \bottomrule
+\end{tabular}
+\end{small}
+\end{table}
+
+\cref{ent:tab:evar_09} summarizes $\evar{0.9}{\mathfrak{R}^{\pi}_{T}}$ for policies $\pi$ computed by the algorithms described above. Bold font indicates results within a 95\% confidence interval of the best policy. The variation in these results is due to simulation used to estimate the risk. We can make the following observations from the results. First, the particular design of \cref{ent:alg:ERM_EVAR} is important because it outperforms its ablated versions significantly on some domains. Second, the results confirm that none of the nested risk measures can optimize the static EVaR-MDP well. Even the risk-neutral policy often outperforms the nested risk measures. Finally in \cref{ent:tab:cvar_09}, we show that the results are similar when compared in terms of the $\cvar{0.9}{\mathfrak{R}^{\pi}_{T}}$ objective. This is not surprising since EVaR is often a good proxy for CVaR~\cite{Ahmadi-Javid2012}. Note that \emph{augmented CVaR} is guaranteed to be optimal for CVaR when the discretization is sufficiently fine, which significantly increases the computation time.  
+
+\begin{table}
+\caption{$\cvar{0.9}{\mathfrak{R}^{\pi}_{T}}$ for $\pi$ returned by each method.} \label{ent:tab:cvar_09}
+\centering
+\begin{small}
+\begin{tabular}{l|rrrrr}
+  \toprule
+ \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} & \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+  \midrule
+ \textbf{\cref{ent:alg:ERM_EVAR}} & \textbf{-4.62} & 7.87 & \textbf{76.6} & \textbf{195} & \textbf{382} \\ 
+ Naive grid & \textbf{-4.63} & 7.91 & 47.8 & \textbf{195} & \textbf{381} \\ 
+ Naive level & -10.00 & 7.41 & 73.1 & \textbf{194} & 217 \\ 
+  \midrule
+ Risk neutral & \textbf{-4.56} & 5.47 & 52.3 & \textbf{193} & \textbf{379} \\ 
+ Nested CVaR & -10.00 & 0.00 & 0.0 & 135 & 217 \\ 
+ Nested EVaR & -10.00 & 7.12 & 0.0 & 169 & 217 \\ 
+ ERM & \textbf{-4.58} & 7.64 & 56.0 & 182 & 217 \\ 
+ Nested ERM & -10.00 & 7.27 & 28.3 & 153 & 217 \\ 
+ \midrule 
+ Augmented CVaR & \textbf{-4.83} & \textbf{8.27} & 55.1 & 82 & 101 \\
+\bottomrule
+\end{tabular}
+\end{small}
+\end{table}
+
+It is also important to discuss the run-time of the algorithms summarized in \cref{ent:tab:runtime}. We implemented all of them in Julia and ran each one in less than a 30 seconds on a laptop computer with the exception of \emph{augmented CVaR} that we ran for up to 10 minutes. The difference in run-time between solving the nested risk measures and computing the ERM-MDP optimal value function (described in \cref{ent:thm:dynamic-program}) is negligible since they all evaluate nearly identical dynamic programs. However, \cref{ent:alg:ERM_EVAR} in our experiments typically needs to solve between 20 and 50 ERM-MDP problems, one for each $\beta_k,\;k=1{:}K$. This additional computation is significant, but we believe it can be addressed. As described in \cref{ent:sec:rasr-evar}, there are ways to significantly speed up \cref{ent:alg:ERM_EVAR}, but we decided to focus on algorithms that are conceptually simple and can be analyzed in this paper, and leave computational concerns for future work.
+
+\begin{table}
+\centering
+\caption{Run-time for the algorithms in seconds.} \label{ent:tab:runtime}
+\begin{small}
+\begin{tabular}{l|rrrrr}
+  \toprule
+  \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} &  \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+  \midrule
+  \textbf{\cref{ent:alg:ERM_EVAR}} & 2.70 & 6.35 & 1.14 & 0.96 & 3.87 \\ 
+  Naive grid & 2.64 & 6.30 & 1.05 & 0.88 & 3.81 \\ 
+  Naive level & 2.79 & 6.38 & 1.19 & 0.92 & 3.95 \\ 
+  Risk neutral & 0.00 & 0.00 & 0.18 & 0.20 & 0.00 \\ 
+  Nested CVaR & 0.01 & 0.01 & 0.26 & 0.16 & 0.01 \\ 
+  Nested EVaR & 0.01 & 0.03 & 0.66 & 0.06 & 0.01 \\ 
+  ERM & 0.00 & 0.00 & 0.24 & 0.16 & 0.00 \\ 
+  Nested ERM & 0.01 & 0.01 & 0.10 & 0.02 & 0.01 \\ 
+  \midrule
+  Augmented CVaR & 14.8  & 29.01 & 780 & 120 & 22.9 \\
+  \bottomrule
+\end{tabular}
+\end{small}
+\end{table}
+
+% \monkieadd{TODO: 
+% \begin{enumerate}
+%     \item Include result for one or two other risk levels in the appendix.
+% \end{enumerate}
+% }
+
+% Second, even though the nested risk measures can be optimized efficiently, their solution does not improve with additional computation time. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{CONCLUSION}
+\label{ent:sec:conclusion} 
+
+We analyzed discounted MDPs with two risk measures: ERM and EVaR that had not been studied in discounted multi-stage decision-making literature. This lack of interest is surprising because their properties make them especially suitable for dynamic decision-making. We derived the first exact DP formulation for ERM in discounted MDPs. We also showed that the optimal value function and an optimal deterministic Markov policy exist for ERM-MDP, and can be computed using value iteration. We showed that EVaR-MDP also has deterministic optimal policies, proposed a new polynomial-time algorithm for computing them, and demonstrated the algorithms numerically. Our numerical results showed that our EVaR algorithm performs consistently well across several domains and risk measures.
+
+%Our empirical results highlight the utility of our algorithms in ERM and EVaR MDPs. 
+
+
+%We analyzed discounted MDPs with two new risk measures: ERM and EVaR. These risk measure had not been studied in the context of MDPs, or discounted multi-stage decision making, previously. This is surprising because their properties make them especially suitable for a dynamic decision making. In ERM-MDP, we derived the first exact DP formulation for ERM in discounted MDPs. We also showed that optimal value function and deterministic Markov policy exist and can be computed using value iteration. We showed that optimal EVaR-MDP policies are also deterministic, we show that the EVaR-MDP objective can be optimized by reducing it to multiple ERM-MDP problems. Our empirical results highlight the utility of our EVaR-MDP algorithms. 
+
+%Future directions include scaling our EVaR-MDP algorithms beyond tabular MDPs and dynamic epistemic uncertainty. It is also essential to better understand the relation between EVaR-MDP and regularized (robust) MDPs~\cite{Derman2021,neu2017unified,Geist2019}. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Acknowledgments}
+We would like to thank Reazul Russel, Erick Delage, Julien Grand-Cl\'ement, and Yinlam Chow for their comments that helped to improve the presentation and correctness of the paper. We also thank the anonymous reviewers for their comments. This work was supported, in part, by NSF grants 2144601 and 1815275.
+
+\bibliographystyle{abbrvnat}
+\bibliography{biblio,additional}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\onecolumn
+\appendix
+
+\section{MONETARY RISK MEASURES}
+\label{ent:secapp:risk-measure-prop}
+
+Consider a probability space $(\Omega,\mathcal F,P)$. %Let $\F_0\subset\F_1\subset\ldots\subset\F_T$ be sub-sigma-algebra of $\F$ such that the filtration $\F_t$ corresponds to the observations available up to time step $t$. We define the boundary conditions as $\F_0=\{\Omega,\emptyset\}$ and $\F_T=\F$. Let $\X_t\colon \Omega\rightarrow\Real$ be a space of $\F_t$-measurable functions (space of $\F_t$-measurable random variables) and $\X = \X_0\times\X_1\ldots\times\X_T$. 
+Let $\mathbb X\colon \Omega\rightarrow\mathbb R$ be a space of $\mathcal F$-measurable functions (space of $\mathcal F$-measurable random variables). 
+
+\subsection{Basic Definitions}
+
+\begin{definition}[Monetary Risk Measure]
+\label{ent:def:risk}
+A monetary risk measure is a function $\risko\colon \mathbb X\rightarrow\mathbb R$ that maps a random variable $X\in\mathbb X$ to real numbers and satisfies the following properties:
+\begin{itemize}[nosep]
+\item[A1.] Monotonicity:
+  \[
+    X_1 \leq X_2 \; \text{(a.s.)} \quad \Longrightarrow \quad \risk{X_1} \leq \risk{X_2},\quad \forall X_1,X_2\in\mathbb X~,
+  \]
+\item[A2.] Translation invariance:
+  \[
+    \risk{c+X} = c + \risk{X},\quad \forall c\in\mathbb R,\;\forall X\in\mathbb X ~.
+  \] 
+\end{itemize}
+\end{definition}
+
+Monetary risk measures are called coherent when they satisfy consistency and concavity properties as defined below. Well known risk measures, like CVaR and EVaR are coherent.
+\begin{definition}[Coherent risk measure] \label{ent:def:coherent-risk}
+A monetary risk measure $\risko\colon \mathbb{X} \to  \Real $ is \emph{coherent} if it satisfies the following properties:
+%
+\begin{itemize}[nosep]
+\item[A3.] Super-additivity:
+  \[
+    \risk{X_1 + X_2} \geq \risk{X_1} + \risk{X_2},\;\;\forall X_1,X_2\in\mathbb X
+  ~,\]
+\item[A4.] Positive homogeneity:
+  \[
+    \risk{c \cdot X} = c\cdot \risk{X},\;\;\forall c\in\mathbb {R}_+,\;\forall X\in\mathbb X
+  \]
+\end{itemize}
+%
+\end{definition}
+
+Concave risk measures, defined below, generalize the class of coherent risk measures by dropping the positive homogeneity requirement and replacing it with concavity. 
+\begin{definition}[Concave risk measure] \label{ent:def:concave-risk}
+A monetary risk measure $\risk\colon \mathbb{X} \to \Real$ is concave if it satisfies the following properties:
+\begin{itemize}[nosep]
+\item[A5.] Concavity: 
+  \[
+    \risk{c\cdot X_1 + (1 - c)X_2} \geq c\cdot \risk{X_1} + (1 - c)\cdot \risk{X_2},\quad \forall c\in[0,1],\;\forall X_1,X_2\in\mathbb X~.
+  \]
+\end{itemize}
+\end{definition}
+
+Every coherent risk measure is a concave risk measure but a concave risk measure may not be coherent. For instance, the Entropic Risk Measure (ERM), defined below, is concave but not incoherent. 
+
+Next, we summarize some other important properties of monetary risk measures that are relevant to our work. A risk measure is \emph{law invariant} if its value depends only on the probability distribution of the random variable as opposed also on the values the random variable assigns to particular elements of the probability space~\cite{Shapiro2014}. A risk measure is  \emph{dynamically consistent} if it satisfies the tower property~\cite{Shapiro2014} and can be optimized using a dynamic program~\cite{Cvitanic1999,Pflug2005,Riedel2004,Delbaen2006,Frittelli2004,Artzner2004,Dowson2021}. Unfortunately, expectation and the minimum (Min) are the only coherent risk measures that are law invariant, dynamically consistent. 
+
+
+\subsection{Value-at-Risk}
+\label{ent:subsec:VaR}
+
+For a random variable $X\in\mathbb X$, its value-at-risk with a confidence level $\alpha\in (0,1)$, denoted by $\var{\alpha}{X}$, is the $(1-\alpha)$-quantile of $X$:
+%
+\begin{align*}
+  \var{\alpha}{X} &= \inf\left\{ x\in \Real \mid \P{X \le x} > 1 - \alpha\right\} \\
+                  &= \sup \left\{ x \in \Real \mid \P{X < x} \le 1 - \alpha \right\} \\
+    &= F^{-1}_X(1-\alpha),
+\end{align*}
+%
+where $F_X$ is the cumulative distribution function (cdf) of $X$. The last equality holds only when $F_X^{-1}$ exists. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Conditional Value-at-Risk}
+\label{ent:subsec:CVaR}
+
+For a random variable $X\in\mathbb X$, its conditional value-at-risk $\cvar{\alpha}{X}$ with a confidence level $\alpha \in (0,1)$ is defined as the expectation of the worst $(1-\alpha)$-fraction of $X$, and can be computed as the solution of the following optimization problem:
+%
+\begin{equation*}
+\cvar{\alpha}{X} = \sup_{\zeta\in\mathbb R}\left(\zeta - \frac{1}{1 - \alpha}\cdot\mathbb E\big[(\zeta - X)_+\big]\right).
+\end{equation*}
+%
+It is easy to see that $\cvar{0}{X} = \E[X]$ and $\lim_{\alpha\rightarrow 1}\cvar{\alpha}{X} = \operatorname{ess} \inf[X]$, where the \emph{essential infimum} of $X$ is defined as $\operatorname{ess} \inf[X] = \sup_{\zeta\in \Real} \P{X < \zeta} = 0 $.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Entropic Risk Measure}
+\label{ent:subsec:ERM}
+
+For a random variable $X\in\mathbb X$, its entropic risk measure $\erm{\beta}{X}$ with the risk parameter $\beta \in (0,\infty)$ is defined as
+%
+\begin{equation*}
+\erm{\beta}{X} \;=\; -\frac{1}{\beta}\log\left(\mathbb E[e^{-\beta X}]\right),\quad\beta>0.
+\end{equation*}
+The definition is extended to the interval $[0,\infty) \cup \{\infty \}$ as
+\begin{align*}
+  \erm{0}{X} &= \E[X] \\
+  \erm{\infty}{X}&= \operatorname{ess} \inf [X]~.
+\end{align*}
+%
+
+We also need a conditional ERM to construct the dynamic programs. This is defined as follows.
+\begin{definition}\label{ent:def:conditional-erm}
+The conditional ERM is defined for $X_1,X_2\in\mathbb X$ as
+\[
+\erm{\beta}{X_1 \mid X_2} \;=\; -\frac{1}{\beta}\log\left(\mathbb E[e^{-\beta X_1} \mid X_2]\right)~.
+\]
+\end{definition}
+
+The following proposition shows that ERM indeed is not a coherent risk measure because it violates the assumption A4 in \cref{ent:def:coherent-risk}. 
+\begin{proposition}
+There exists a random variable $X$ such that $\erm{\beta}{c \cdot X} \neq c\cdot \erm{\beta}{X}$.
+\end{proposition}
+
+The following lemma plays a crucial role in efficiently computing EVaR, defined below, which can be expressed in terms of ERM. 
+\begin{lemma}[\cite{Ahmadi-Javid2012}]
+The function $t \mapsto \erm{t^{-1}}{X}$ for any random variable $X\in \mathbb{X}$ and $t > 0$ is concave and non-decreasing.
+\end{lemma}
+
+We use the following lemma in the analysis of EVaR solution approximation by discretization in this paper. 
+\begin{lemma}\label{ent:prop:erm-nonincreasing}
+The function $\beta \mapsto \erm{\beta}{X}$ for any random variable $X \in \mathbb{X}$ and $\beta > 0$ is continuous and non-increasing.
+\end{lemma}
+
+The following lemma, which represents a new result to the best of our knowledge, plays an important role in bounding the difference between ERM and the expectation. This result serves to bound the error of replacing the risk-averse value function by a risk-neutral value function in \cref{ent:alg:rasr-vi-inf}. 
+\begin{lemma} \label{ent:lem:bound-approximation}
+Let $X \in \mathbb{X}$ be a bounded random variable such that $x_{\min} \le X \le x_{\max}$ a.s. Then, for any risk level $\beta > 0$, $\erm{\beta}{\cdot}$ can be bounded as
+\[
+ \E[X] - \frac{\beta(x_{\max}-x_{\min})^2}{8} \le \erm{\beta}{X} \le \E[X].
+\]
+\end{lemma}
+\begin{proof}
+Recall that the Hoeffding's lemma shows that for any $\forall \lambda \in \real$, we may write~\cite{Massart2003,Boucheron2013}
+\[
+    0 < \E[e^{\lambda X}] \leq \exp{\lambda\cdot  \E[X] + \frac{\lambda^2 (x_{\max}-x_{\min})^2}{8}}~.
+  \]
+Applying log to both sides of the inequality above gives
+\[
+    \log\big(\E[e^{\lambda X}]\big) \leq \lambda \E[X] + \frac{\lambda^2 (x_{\max}-x_{\min})^2}{8} ~.
+\]
+Then, variable substitution $\lambda = -\beta$ and algebraic manipulation shows that
+\begin{align*}
+    \log\big(\E[e^{-\beta X}]\big) & \leq -\beta\cdot  \E[X] + \frac{\beta^2 (x_{\max}-x_{\min})^2}{8}\\
+    -\frac{1}{\beta}\log\big(\E[e^{-\beta X}]\big) &\geq  \E[X] - \frac{\beta (x_{\max}-x_{\min})^2}{8}\\
+\end{align*}
+Substituting the definition of ERM into the inequality above yields then the first desired inequality:
+\[
+    \E[X] - \frac{\beta (x_{\max}-x_{\min})^2}{8} \leq \erm{\beta}{X}~.
+\]
+The second inequality in the lemma's statement, $\erm{\beta}{X} \leq \E[X]$, follows immediately from the Donsker-Varadhan's Variational Formula. 
+\end{proof}
+
+The following lemma helps to show that a deterministic policy can attain the same return as a randomized policy when the objective is an ERM. This result is not surprising and derives from the fact that the $\erm{\beta}{X} \le \max_{\omega \in \Omega} X$ for any random variable $X\in \mathbb{X}$ defined over a finite probability space.
+
+\begin{lemma}  \label{ent:proof:deterministic_action}
+Let $X\colon \Omega \to \mathcal{A}$ be a random variable defined over a finite action set $\mathcal{A}$ and let $g\colon  \mathcal{A}\to \Real$ be a function defined for each action. Then, for any $\beta \ge 0$, we have 
+\[
+    \max_{a \in \actions} g(a) \;=\;  \max_{d \in \Delta^A} \erm{\beta}{ g(X) \mid  X \sim d }~.
+  \]
+\end{lemma}
+
+\begin{proof}
+We first prove that $\max_{a \in \actions} g(a) \le \max_{d \in \Delta^A} \erm{\beta}{ g(X) \mid  X \sim d }$. Let $a\opt \in \arg\max_{a\in \actions } g(a)$ be an optimal action. We now construct a policy $\bar{d} \in \Delta^A$ as $\bar{d}(a\opt) = 1$ and $\bar{d}(a) = 0,\;\forall a\in \actions \setminus \{a\opt \}$. Substituting $\bar{d}$ in the definition of ERM yields that
+%
+\begin{equation} \label{ent:eq:erm-singleton}
+\begin{aligned}
+\erm{\beta}{g(X) \mid X \sim \bar{d}} &= - \beta^{-1} \cdot \log \Bigl( \E\left[\exp{-\beta\cdot  g(X)} \mid  X \sim \bar{d} \right] \Bigr)  \\
+  &= - \beta^{-1} \cdot \log \Bigl( \exp{-\beta\cdot  g(a\opt)} \Bigr) \\
+  &= g(a\opt)~.
+\end{aligned}
+\end{equation}
+%
+Using~\eqref{ent:eq:erm-singleton} and the fact that $\bar{d}$ is a valid probability distribution in $\Delta^{A}$, we obtain the desired inequality as
+%
+\[
+  \max_{a \in \actions} \; g(a) = g(a\opt) = \erm{\beta}{g(X) \mid X \sim \bar{d}} \le  \max_{d \in \Delta^A} \; \erm{\beta}{g(X) \mid X \sim d} ~.
+\]
+%
+To prove the converse inequality $\max_{a \in \actions} g(a) \ge \max_{d \in \Delta^{A}} \erm{\beta}{ g(X) \mid  X \sim d }$, we define $d\opt$ as an optimal distribution $d\opt \in \arg\max_{d \in \Delta^{A}} \erm{\beta} { g(X) \mid X \sim d }$. It will be convenient to use the dual representation of $\erm{\beta}{g(X) \mid X \sim d}$, which for for any $d \in \Delta^{A}$ is defined as (see e.g.,~\cite{Ahmadi-Javid2012})
+% 
+\[
+  \erm{\beta}{g(X) \mid X \sim d} \; =\; \inf_{\bar{d} \in \Delta^A,\;\bar{d} \ll d}\left\{ \E[g(X) \mid X \sim \bar{d}] + \frac{1}{\beta} \kl(\bar{d} \| d) \right\}~,
+\]
+%
+where $\kl$ is the KL-divergence and $\ll$ denotes the absolute continuity of probability measures. Using this dual representation, we get the following upper-bound on $\erm{\beta} {g(X)  \mid  X \sim d\opt}$:
+%
+\begin{align*}
+\erm{\beta}{g(X) \mid X \sim d\opt} &= \inf_{\bar{d} \in \Delta^A}\left\{ \E[g(X) \mid X \sim \bar{d}] + \frac{1}{\beta} \kl(\bar{d} \| d\opt)\;\vert\; \bar{d} \ll d\opt \right\}  \\
+	&\le \E[g(X) \mid X \sim d\opt] + \frac{1}{\beta} \kl(d\opt  \| d\opt)  \\ 
+        &\stackrel{\text{(a)}}{=} \E[g(X) \mid X \sim d\opt] \\
+  &\stackrel{\text{(b)}}{\leq} \max_{a\in\actions} g(a)~,
+\end{align*}
+%
+where {\bf (a)} holds because $\kl(d \| d) = 0$, and {\bf (b)} follows because $A$ is finite, and thus, for each $d \in \Delta^{A}$, we have
+%
+\[
+  \max_{a\in\actions} g(a) \geq \E\left[g(X) \mid  X \sim d \right]~.
+\]
+%
+This proves the second desired inequality since $d\opt \in \Delta^{A}$ and concludes the proof. 
+\end{proof}
+
+The result in \cref{ent:proof:deterministic_action} can be further generalized to a broader class of risk measures~\cite{Delage2019}.
+
+%The proof technique used to show \cref{ent:proof:deterministic_action} would also work to to establish an equivalent property for CVaR and other coherent risk measures $\risko\colon  \mathbb{X}\to \Real$ that satisfy that $\risk{X} \le \E[X]$ for every random variable $X$.
+
+
+\subsection{Entropic Value-at-Risk}
+\label{ent:subsec:EVaR}
+
+For a random variable $X\in\mathbb X$, its entropic value-at-risk with $\evar{\alpha}{X}$ confidence level $\alpha \in (0,1)$ is defined as
+%
+\begin{equation}\label{ent:eq:evar-def-app}
+\evar{\alpha}{X} = \sup_{\beta>0}\left(\erm{\beta}{X} + \frac{\log(1 - \alpha)}{\beta}\right).
+\end{equation}
+%
+It is easy to see that $\evar{0}{X} = \E[X]$ and $\lim_{\alpha\to 1}\evar{\alpha}{X} = \operatorname{ess}\inf[X]$. In addition, EVaR is a non-increasing function in $\alpha$ and is bounded as:
+\[
+\operatorname{ess}\inf[X] \leq \evar{\alpha}{X} \leq \E[X].      
+\]
+
+EVaR was proposed as a tightest Chernoff-style lower bound on the popular VaR risk measure with the same confidence level $\alpha$. It is also a lower bound CVaR as the following lemma shows. 
+\begin{lemma}[proposition~3.2 in~\cite{Ahmadi-Javid2012}]
+The following inequalities hold for any $\alpha\in (0,1)$ and a random variable $X\in \mathbb{X}$:
+\begin{equation*}
+\evar{\alpha}{X} \leq \cvar{\alpha}{X} \leq \var{\alpha}{X}.    
+\end{equation*}
+\end{lemma}
+
+The following lemma, which shows how the optimal solution of~\eqref{ent:eq:evar-def-app} scales with the scale of the random variable is necessary when analyzing the properties of EVaR solutions.
+\begin{lemma} \label{ent:lem:evar-opt-scaling}
+Suppose that the supremum in~\eqref{ent:eq:evar-def-app} is attained by some $\beta\opt > 0$ for a random variable $X$. Then, the supremum in~\eqref{ent:eq:evar-def-app} is attained  at $c^{-1}\cdot \beta\opt$ for any random variable $c\cdot X$ and a constant $c > 0$. 
+\end{lemma}
+\begin{proof}
+Using positive quasi-homogeneity (\cref{ent:thm:pos-quasi-homogen}) of ERM and algebraic manipulation, we can reformulate~\eqref{ent:eq:evar-def-app} for $c\cdot X$ as
+  \begin{align*}
+    \evar{\alpha}{c\cdot X}
+    &= \sup_{\beta>0}\left(\erm{\beta}{c\cdot X} + \frac{\log(1 - \alpha)}{\beta}\right) \\
+    &= \sup_{\beta>0}\left(c \cdot \erm{c\cdot\beta}{X} + \frac{\log(1 - \alpha)}{\beta}\right) \\
+    &= c \cdot \sup_{\beta>0}\left(\erm{c\cdot\beta}{X} + \frac{\log(1 - \alpha)}{c\cdot \beta}\right) \\
+    &= c \cdot \sup_{\beta>0}\left(\erm{c\cdot\beta}{X} + \frac{\log(1 - \alpha)}{c\cdot \beta}\right) \\
+    &= c \cdot \sup_{\tau>0}\left(\erm{\tau}{X} + \frac{\log(1 - \alpha)}{\tau}\right) \\
+    &= c\cdot \evar{\alpha}{X}
+  \end{align*}
+We used the variable substitution $\tau = c\cdot \beta$. Therefore, if the supremum is attained at $\tau\opt $ for $c\cdot X$, it is attained at $\beta\opt = c^{-1} \cdot \tau\opt$ for $c\cdot X$.
+
+Note that the derivation above also confirms that EVaR is positively homogeneous. 
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\section{PROOFS OF SECTION~\ref{ent:sec:preliminaries}}
+\label{ent:app:sec:prelim} 
+
+The following proposition states a simple, but important property of the expectation operator which plays a crucial role in formulating the dynamic programs. The property is known under several different names, including \emph{the tower property}, \emph{the law of total expectation}, and \emph{the law of iterated expectations}.
+\begin{proposition}[Tower Property for Expectation (e.g.,~Proposition~3.4 in~\cite{Ross2007})] \label{ent:lem:tower-exp}
+Any two random variables $X_1,X_2\in\mathbb X$ satisfy that
+%
+\[\E[X_1] \;=\; \E\left[\E[X_1 \mid X_2]\right]~.\]
+%
+\end{proposition}
+
+A convenient way to represent ERM is to use its \emph{certainty equivalent} form. This form relates the risk measure to the popular expected utility framework for decision-making~\cite{Ben-Tal2007}. In the expected utility framework, one prefers a lottery (or a random reward) $X_1\in \mathbb{X}$ over $X_2 \in \mathbb{X}$ if and only if
+\[
+ \E[u(X_1)] \ge \E[u(X_2)]~,
+\]
+for some increasing \emph{utility function} $u\colon \Real \to  \Real$.
+
+The expected utility $\E[u(X)]$ is difficult to interpret because its units are incompatible with $X$. A more interpretable characterization of the expected utility is to use the \emph{certainty equivalent} $z\in \Real$, which is defined as the certain quantity that achieves the same expected utility as $X$:
+%
+\begin{equation}\label{ent:eq:ce-def}
+  \E[u(z)] = \E[u(X)], \quad \text{and therefore}, \quad  z=u^{-1}(\E[u(X)])~.
+\end{equation}
+%
+Algebraic manipulation from~\eqref{ent:eq:ce-def} then shows that ERM for any $X\in \mathbb{X}$ can be represented as the certainty equivalent
+ \begin{equation}\label{ent:eq:erm-ce}
+   \erm{\beta}{X} \;=\; u^{-1}(\E[u(X)])~,
+\end{equation}
+for the utility function $u\colon \Real \to \Real$ (see definition 2.1 in \cite{Ben-Tal2007}) defined as
+\[
+  u(x) = \beta^{-1} - \beta^{-1} \cdot \exp {-\beta \cdot x}~.
+\]
+Because the function $u$ is strictly increasing, its inverse $u^{-1}\colon  \Real \to \Real$ exists and equals to
+\[
+  u^{-1}(z) = - \beta^{-1} \cdot \log (1- \beta \cdot z)~.
+\]
+
+\begin{proof}[Proof of \cref{ent:thm:tower-erm}]
+%
+The property is trivially true when $\beta = 0$ from \cref{ent:lem:tower-exp} since $\erm{0}= \E$. The property then follows by algebraic manipulation for $\beta > 0$ using the certainty equivalent representation in~\eqref{ent:eq:erm-ce} as
+%
+\begin{align*}
+\erm{\beta}{\erm{\beta}{X_1 \mid X_2}} &= \erm{\beta}{u^{-1} \left(   \E[u(X_1) \mid X_2] \right)} \\
+&= u^{-1}\left(\E\left[ u\left( u^{-1} \left( \E[u(X_1) \mid X_2] \right) \right) \right] \right) \\
+&= u^{-1}(\E \left[ \E[u(X_1) \mid X_2] \right]) \\
+&= u^{-1}( \E[u(X_1)]) && \text{ \cref{ent:lem:tower-exp}}\\
+&= \erm{\beta}{X_1}~.
+\end{align*}
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\section{PROOFS OF SECTION~\ref{ent:sec:rasr-erm}}
+\label{ent:app:sec:ERM} 
+
+We start this section by reporting the pseudo-code for the value iteration (VI) algorithm in finite-horizon ERM-MDP (\cref{ent:alg:ERM-finite}). This algorithm is an adaptation of the standard VI algorithm to the finite-horizon ($T<\infty$) setting. It uses the results of Theorems~\ref{ent:thm:dynamic-program} and~\ref{ent:th:optimal_deterministic}, and first computes the optimal value function $v\opt_t$ backwards in time ($t = T,T-1,\ldots,0$) according to~\eqref{ent:eq:v-erm-opt}, and then obtains the optimal policy as a policy greedy to $v\opt$ by solving the optimization~\eqref{ent:eq:pol-greedy}.
+
+\begin{algorithm} 
+    \KwIn{Horizon $T < \infty$, risk level $\beta > 0$, terminal value $v_T(s),\;\forall s\in\states$}
+    \KwOut{Optimal value $(v_t\opt)_{t=0}^{T}$ and policy $(\pi_t\opt)_{t=0}^{T-1}$}
+    Initialize $v\opt_{T}(s) \gets v'(s), \; \forall s\in \states$ \;
+    \For{$t = T{-}1{:}0$}{ 
+      Update $v_t\opt$ using~\eqref{ent:eq:v-erm-opt} and $\pi_t\opt$ using~\eqref{ent:eq:pol-greedy}\;
+    }
+    \Return $v\opt , \pi\opt$ \;
+    \caption{VI for finite-horizon ERM-MDP}   
+    \label{ent:alg:ERM-finite}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{proof}[{\bf\em Proof of \cref{ent:thm:pos-quasi-homogen}}]
+The property is trivially true for $c = 0$ or $\beta = 0$ because $\erm{\beta}{0} = 0$ and $\ermo_0[\cdot] = \E[\cdot]$. For $c > 0$ and $\beta >0$, the property follows by rearranging the terms as
+%
+\begin{align*}
+  \erm{\beta \cdot c}{X} = -\frac{1}{\beta c}\log\big(\E[e^{-\beta \cdot c \cdot X}]\big) \; \Longrightarrow \; c \cdot \erm{\beta \cdot c}{X} &= -\frac{1}{\beta}\log\big(\E[e^{-\beta \cdot c \cdot X}]\big) \\
+&= \erm{\beta}{c\cdot X}.
+\end{align*}
+%
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{proof}[\bf\em Proof of \cref{ent:thm:dynamic-program}]
+The proof is divided into two parts: the proof for $v^{\pi}$ (Eq.~\ref{ent:eq:v-erm-pi}) and a proof for $v\opt$ (Eq.~\ref{ent:eq:v-erm-opt}).
+
+{\em Proof for $v^\pi$}: For any fixed $\pi\in \Pi_{MR}$, we prove the claim for $v^{\pi}$ by backward induction on $t$ from $t=T$ to $t=0$. %In particular, we show that any $v^{\pi}_t$ that satisfies~\eqref{ent:eq:v-erm-pi} must be equal to its definition in~\eqref{ent:eq:erm-rasr-v}, and therefore, is also unique. 
+The base case of the induction with $t = T$ is trivial because by definition $v_T(s) = 0,\;\forall s\in \states$. To prove the inductive step, we first assume that any function $v_{t'},\;t'=t+1{:}T$ defined by~\eqref{ent:eq:erm-rasr-v} satisfies~\eqref{ent:eq:v-erm-pi}, and then show that the same is true for $v^\pi_t$. By the induction hypothesis we can substitute the definition of $v_{t+1}^{\pi}(S')$ from~\eqref{ent:eq:erm-rasr-v} into~\eqref{ent:eq:v-erm-pi} and write 
+%
+\begin{align*}
+v_t^{\pi}(s) &= \erm{\beta \cdot \gamma^t} {r(s,A_t) + \gamma\cdot v_{t+1}^{\pi}(S')} \nonumber \\
+&= \erm{\beta\cdot \gamma^t} {r(s,A_t) + \gamma \cdot \erm{\beta \cdot \gamma^{t+1}} {\mathfrak{R}^\pi_{t+1{:}T}(S')}} \nonumber \\
+&= \erm{\beta\cdot \gamma^t} {r(s,A_t) + \gamma \cdot \erm{\beta \cdot \gamma^{t+1}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t-1} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S' } } \nonumber \\
+&\stackrel{\text{(a)}}{=} \erm{\beta\cdot \gamma^t} {r(s,A_t) + \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S' }} \nonumber \\
+&= \erm{\beta\cdot \gamma^t} {r(S_t,A_t) + \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s} \nonumber \\
+&\stackrel{\text{(b)}}{=} \erm{\beta\cdot \gamma^t} { \erm{\beta \cdot \gamma^{t}} {r(S_t,A_t) +\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s} \nonumber \\
+&= \erm{\beta\cdot \gamma^t} { \erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s} = \nonumber \\
+&\stackrel{\text{(c)}}{=} \erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'}) \mid S_t = s} = \erm{\beta \cdot \gamma^{t}} {\mathfrak{R}^\pi_{t{:}T}(s)}
+\end{align*}
+%
+where {\bf (a)}, {\bf (b)}, and {\bf (c)} come from the positive quasi-homogeneity~(\cref{ent:thm:pos-quasi-homogen}), translation invariance~(A2 in \cref{ent:def:risk}), and tower~(\cref{ent:thm:tower-erm}) properties of ERM. This derivation proves the inductive step and shows that any function $v^{\pi}$ that satisfies the Bellman equation in~\eqref{ent:eq:v-erm-pi} satisfies the definition of value function in~\eqref{ent:eq:erm-rasr-v}, and thus, is unique. 
+
+% where $A_{t'} \sim \pi_{t'}(S_{t'})\;\forall t'\in t{:}T{-}1$ and the random variables $S_{t'},\;t'=t+1{:}T{-}1$ follow the policy $\pi$ and state transition probabilities. Using translation invariance~(A2 in \cref{ent:def:risk}) and tower~(\cref{ent:thm:tower-erm}) properties of ERM, we can continue the sequence of equalities in~\eqref{ent:eq:temp0} as
+% %
+% \begin{align*}
+%   v_t^{\pi}(s_t)
+%   &= \erm{\beta\cdot \gamma^t} {r(S_t,A_t) + \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s_t }  \\
+%   &= \erm{\beta\cdot \gamma^t} { \erm{\beta \cdot \gamma^{t}} {r(S_t,A_t) +\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s_t } \\
+%   &= \erm{\beta\cdot \gamma^t} { \erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }  \mid S_t = s_t } \\
+%   &= \erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'}) \mid S_t = s} ~.
+% \end{align*}
+
+%The derivation above shows that any $v^{\pi}$ that satisfies the Bellman equation in~\eqref{ent:eq:v-erm-pi} is unique and satisfies the definition in~\eqref{ent:eq:erm-rasr-v}. 
+
+{\em Proof for $v^\star$}: The proof of the Bellman equation for the optimal value function $v\opt$ proceeds by backward induction analogously to the proof of~\eqref{ent:eq:v-erm-pi} with the difference that it incorporates the optimization over actions. As before, the base case with $t = T$ is trivial because $v\opt_T(s) = 0,\;\forall s\in \states$ by definition. To prove the inductive step, we first assume that any function $v^\star_{t'},\;t':t+1{:}T$ \monkie{should it be $t'=t+1{:}T$} defined by~\eqref{ent:eq:erm-rasr-v-opt} satisfies~\eqref{ent:eq:v-erm-opt}, and then show that the same is true for $v^\star_t$. 
+
+In the proof of the inductive step, we use \cref{ent:proof:deterministic_action}, which shows how the maximization over actions can be replaced by a maximization over randomized policies that are distributions over actions as
+%
+\begin{align}
+\nonumber
+  v_t\opt(s) &= \max_{a\in \actions} \; \erm{\beta \cdot \gamma^t} {r(s,A_t) + \gamma\cdot v_{t+1}\opt (S') \mid  A_t = a }  \\
+  \label{ent:eq:dp-opt}
+&= \max_{d\in \Delta^A} \; \erm{\beta \cdot \gamma^t} {r(s,A_t) + \gamma\cdot v_{t+1}\opt(S') \mid  A_t \sim d }~.
+\end{align}
+%
+By the induction hypothesis we can substitute the definition of $v_{t+1}^\star(S')$ from~\eqref{ent:eq:erm-rasr-v-opt} into~\eqref{ent:eq:dp-opt} and write 
+%
+\begin{align*}
+  v_t\opt(s) &= \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} {r(s,A_t) + \gamma   \max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t+1}} {\mathfrak{R}_{t{:}T}^\pi(s)}} \\
+  &= \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} {r(s,A_t) + \gamma   \max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t+1}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t-1}  r(S_{t'},A_{t'})  \mid S_{t+1} = S' }} \\
+  &\stackrel{\text{(a)}}{=} \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} {r(s,A_t) + \max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S' }} \\
+  &= \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} {r(S_t,A_t) + \max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'}) \mid S_{t+1} = S', A_t } \mid S_t = s}  \\
+  &\stackrel{\text{(b)}}{=} \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} { \max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t}} {r(S_t,A_t) +\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t } \mid S_t = s} \\
+  &= \max_{d\in \Delta^A} \; \erm{\beta\cdot \gamma^t} {\max_{\pi \in \Pi_{MR}^{t+1{:}T}} \; \erm{\beta \cdot \gamma^{t}} {\sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t } \mid S_t = s} \\
+  &\stackrel{\text{(c)}}{=} \max_{\pi \in \Pi_{MR}^{t{:}T}}\erm{\beta \cdot \gamma^{t}} {\sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'}) \mid S_t = s} = \max_{\pi \in \Pi_{MR}^{t{:}T}}\erm{\beta \cdot \gamma^{t}} {\mathfrak{R}^\pi_{t{:}T}(s)},
+\end{align*}
+%
+where {\bf (a)} comes from the positive quasi-homogeneity~(\cref{ent:thm:pos-quasi-homogen}) property of ERM, {\bf (b)} comes from the translation invariance~(A2 in \cref{ent:def:risk}) property of ERM, and {\bf (c)} comes from the monotonicity~(A1 in \cref{ent:def:risk}) and tower~(\cref{ent:thm:tower-erm}) properties of ERM. This derivation proves the inductive step and shows that any function $v^\star$ that satisfies the Bellman equation in~\eqref{ent:eq:v-erm-opt} satisfies the definition of value function in~\eqref{ent:eq:erm-rasr-v-opt}, and thus, is unique. 
+\end{proof}
+
+%Next, we can substitute the definition of $v_{t+1}\opt(S')$ from~\eqref{ent:eq:erm-rasr-v-opt} into~\eqref{ent:eq:dp-opt} by the induction hypothesis and use the positive quasi-homogeneity of ERM~(\cref{ent:thm:pos-quasi-homogen}) to get that
+
+% Here, $S_t = s_t$, $A_t \sim d$, and $A_{t'} \sim \pi_{t'}(S_{t'})$ for each $t' \ge t+1$ and the random variables $S_{t'}, t'=t+1{:}T{-}1$ are governed by $\pi_{t'}$ and transition probabilities. We can move $\gamma$ inside the maximization operator because it is non-negative.
+
+% Finally, using monotonicity~(A1 in \cref{ent:def:risk}), translation invariance~(A2 in \cref{ent:def:risk}) and tower~(\cref{ent:thm:tower-erm}) properties of ERM, we conclude that
+% \begin{align*}
+%   v_t\opt (s_t)
+%   &= \max_{d\in \Delta^A} \erm{\beta\cdot \gamma^t} {r(S_t,A_t) + \max_{\pi \in \Pi_{MR}^{t+1}}\erm{\beta \cdot \gamma^{t}} {\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }}  \\
+%   &= \max_{d\in \Delta^A}\erm{\beta\cdot \gamma^t} { \max_{\pi \in \Pi_{MR}^{t+1}}\erm{\beta \cdot \gamma^{t}} {r(S_t,A_t) +\sum_{t'=t+1}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }} \\
+%   &= \max_{d\in \Delta^A}\erm{\beta\cdot \gamma^t} { \max_{\pi \in \Pi_{MR}^{t+1}}\erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'})  \mid S_{t+1} = S', A_t }} \\
+%   &= \max_{\pi \in \Pi_{MR}^t}\erm{\beta \cdot \gamma^{t}} { \sum_{t'=t}^{T-1} \gamma^{t'-t} \cdot r(S_{t'},A_{t'}) \mid S_t = s_t} ~.
+% \end{align*}
+% As before, $S_t = s_t$, $A_t \sim d$, and $A_{t'} \sim \pi_{t'}(S_{t'})$ for each $t' \ge t+1$.The derivation above shows that any $v\opt$ that satisfies~\eqref{ent:eq:v-erm-opt} equals to the definition in~\eqref{ent:eq:erm-rasr-v-opt} and is, therefore, unique. 
+%\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{proof}[\bf\em Proof of \cref{ent:th:optimal_deterministic}]
+Following the notation of chapter 4 in \cite{Puterman2005}, let $\mathcal{H}_t$ be the set of all histories up to time $t$ inclusively. Let the optimal history-dependent value function be $u_t\opt \colon  \mathcal{H}_t \to \Real, t = 0{:}T{-}1$. The value function $u\opt = (u\opt_t)_{t=0}^{T}$ is achieved by the optimal history-dependent policy because the state and actions are finite, and thus, the space of randomized history-dependent policies is compact.
+
+The proof proceeds in three steps. 
+
+{\bf\em (i)} First, we show that $v\opt$ attains the return of the optimal history-dependent value function:
+\[
+u\opt_t(h_t) = v\opt_t(s_t) \quad  \forall h_t\in \mathcal{H}_t, \; t = 0{:}T{-}1~,
+\]
+where $s_t$ is the $t$-th and final state in the history $h_t$. This result is a consequence of the dynamic programming formulation in \cref{ent:thm:dynamic-program}. An argument analogous to the proof of Theorem 4.4.2(a) in~\cite{Puterman2005} shows that $u\opt_t(h_t)$ depends only on $s_t$, which is the final state in the history $h_t$.
+
+Using the standard backward-induction argument on $t$, we assume that $u\opt_{t+1}(h_{t+1}) = v\opt_{t+1}(s_{t+1})$ holds and then prove that $u\opt_t(h_t) = v\opt_t(s_t)$. Let $d^\star \in \Delta^A$ be the part of a decision rule achieving $u\opt$ that decides about the actions that should be taken at time-step $t$. Applying \cref{ent:thm:dynamic-program} to the optimal history-dependent value function $u\opt$, we may write
+%
+\begin{align*}
+  u\opt_t(h_t) &\stackrel{\text{(a)}}{=} \erm{\beta \cdot \gamma^t} {r(s_t,A_t) + \gamma\cdot u_{t+1}\opt ((h_t,A,S')) \mid  A_t \sim d^\star } \\
+&\stackrel{\text{(b)}}{=} \erm{\beta \cdot \gamma^t} {r(s_t,A_t) + \gamma\cdot v_{t+1}\opt(S') \mid  A_t \sim d^\star} \\
+&= \max_{d\in \Delta^A} \; \erm{\beta \cdot \gamma^t} {r(s_t,A_t) + \gamma\cdot v_{t+1}\opt(S') \mid A_t \sim  d } \\
+&\stackrel{\text{(c)}}{=}\max_{a\in \mathcal A} \; \erm{\beta \cdot \gamma^t} {r(s_t,a) + \gamma\cdot v_{t+1}\opt(S')} \stackrel{\text{(d)}}{=} v\opt_t(s_t) \; ,
+\end{align*}
+%
+where {\bf (a)} follows from the fact that (i) the reward function depends only on the current state and not the full history and (ii) the history at time-step $t+1$, $h_{t+1}$ is constructed by appending action $A_t$ and state $S'$ to the history at time-step $t$: $h_{t+1}=(h_t,A_t,S')$, {\bf (b)} comes from the inductive hypothesis, {\bf (c)} is the result of \cref{ent:proof:deterministic_action}, and {\bf (d)} comes from~\eqref{ent:eq:v-erm-opt} in \cref{ent:thm:dynamic-program}. This result shows that the optimal history-dependent randomized $u\opt$ and the optimal Markov deterministic $v\opt$ value functions are equal in ERM-MDP. 
+
+%The notation $(h_t,A,S')$ signifies a new history $h_{t+1}$ constructed by appending the action $A$ and state $S'$. The state $S'$ is a random variable distributed according to $p(\cdot \mid s_t, A)$. 
+
+% Using \cref{ent:proof:deterministic_action} in \cref{ent:app:sec:tech-lem} and the definition of the optimal value function in ERM-MDP, we have
+% %
+% \begin{equation*}
+% u\opt_t(h_t) = \max_{d\in \Delta^A} \; \erm{\beta \cdot \gamma^t} {r(s_t,A) + \gamma\cdot v_{t+1}\opt(S') \mid A \sim  d } = v\opt_t(s_t).
+% \end{equation*}
+
+{\bf\em (ii)} The second part of the proof is to show that the value function of any (optimal) policy $\pi\opt\in\Pi_{MD}$ that is a solution to the optimization problem~\eqref{ent:eq:EVaR-MDP-erm-return} is equal to the optimal value function $v\opt$:
+\[
+v_t^{\pi\opt}(s) = v_t\opt(s), \quad \forall s\in \states, \; t = 0{:}T~.
+\]
+This result follows using the standard backward induction argument and algebraic manipulation from \cref{ent:thm:dynamic-program}. The derivation relies on the fact that $\actions$ is finite and the maximum in~\eqref{ent:eq:v-erm-opt} exists and is achievable. 
+
+{\bf\em (iii)} Here we show that any greedy policy to the optimal value function $v\opt$ is an optimal policy, that is, a solution to the optimization problem~\eqref{ent:eq:EVaR-MDP-erm-return}. This is trivial from parts (i) and (ii) because the value function of the greedy policy to $v^\star$ is $v^\star$, and we know from part (ii) that any policy that solves~\eqref{ent:eq:EVaR-MDP-erm-return} also has value $v^\star$. Thus, the greedy policy is in fact optimal. 
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{proof}[\bf\em Proof of \cref{ent:thm:approx-error}]
+It is important to reiterate the following definitions: 
+\begin{enumerate}
+\item $\pi^\star=\{\pi^\star_t\}_{t=0}^\infty$ and $v^\star = v^{\pi^\star} = \{v^\star_t\}_{t=0}^\infty$ are the optimal policy and optimal value function of the ERM-MDP in the infinite-horizon discounted setting with $T=\infty$ and $\gamma\in (0,1)$. In other words, $\pi^\star$ is a solution to the ERM-MDP optimization~\eqref{ent:eq:EVaR-MDP-erm-return}.
+\item $\pi_\infty\opt$ and $v_{\infty}\opt =v^{\pi_{\infty}\opt}_{\infty}$ are the optimal policy and value function of the MDP in the risk-neutral infinite-horizon discounted setting.
+\item $\tilde{\pi}^\star = \{\tilde{\pi}^\star_t\}_{t=0}^{T'}$ and $\tilde{v}^\star=v^{\tilde{\pi}^\star} = \{\tilde{v}^\star_t\}_{t=0}^{T'}$ are the optimal policy and value function of the finite-horizon discounted ERM-MDP with risk level $\beta$, discount factor $\gamma$, horizon $T'$, and the value function at horizon $T'$ set to $\tilde{v}^\star_{T'}=v_{\infty}\opt$. In other words, $\tilde{\pi}^\star_t$ and $\tilde{v}^\star$ are the outputs of \cref{ent:alg:ERM-finite} with $T = T'$ and $v'=v_{\infty}\opt$.
+\item $\hat{\pi}\opt = \{\hat{\pi}^\star_t\}_{t=0}^\infty$ and its value $\hat{v}^\star = \{\hat{v}^\star_t\}_{t=0}^\infty$ are the policy and value function returned by \cref{ent:alg:rasr-vi-inf} that are constructed as follows: 
+\begin{center}
+\begin{tabular}{lllllll}
+$\hat{\pi}^\star_t = 
+\begin{cases}
+\tilde{\pi}^\star_t & \text{if } \; 0 \leq t < T', \\
+\pi_{\infty}\opt & \text{if } \; t \geq T'.
+\end{cases}$ & & & & & 
+$\hat{v}^\star_t = v^{\hat{\pi}^\star}_t = 
+\begin{cases}
+\tilde{v}^\star_t = v^{\tilde{\pi}^\star}_t & \text{if } \; 0 \leq t < T', \\
+v_{\infty}\opt  = v^{\pi_{\infty}}_{\infty} & \text{if } \; t \geq T'.
+\end{cases}$
+\end{tabular}
+\end{center}
+\end{enumerate}
+
+Our goal is to prove an upper-bound on the difference between the $\erm{\beta}{\cdot}$ of the returns of policies $\pi^\star$ and $\hat{\pi}\opt$: 
+%
+\begin{equation*}
+\erm{\beta} { \mathfrak{R}_{\infty}^{\pi\opt}  } - 
+\erm{\beta} { \mathfrak{R}_{\infty}^{\hat{\pi}\opt}} \qquad \text{or equivalently} \qquad v_0^{\pi^\star}(s_0) - v_0^{\hat{\pi}\opt}(s_0)\;. 
+\end{equation*}
+%
+
+
+As the first step of the proof, we bound the difference between the infinite-horizon $\gamma$-discounted risk-neutral and ERM value functions of any policy $\pi$, at any time-step $t = 0{:}\infty$, and any state $s\in\mathcal S$ as
+%
+\begin{align} \label{ent:eq:basic-bound}
+    0 \stackrel{\text{(a)}}{\le} v^{\infty}_{\pi}(s) - v^{\pi }_t(s) &= \E{[\mathfrak{R}^\pi_{0{:}\infty}(s)]} - \erm{\beta\cdot\gamma^t}{\mathfrak{R}^\pi_{t{:}\infty}(s)} \\ 
+    &= \E{[\mathfrak{R}^\pi_{0{:}\infty}(s)]} - \erm{\beta\cdot\gamma^t}{\mathfrak{R}^\pi_{0{:}\infty}(s)} \stackrel{\text{(b)}}{\le} \frac{\beta \cdot \gamma^t \cdot \vspan^2}{8}~. \nonumber 
+\end{align}
+%
+{\bf (a)} holds because $\E$ is an upper-bound on the ERM, and {\bf (b)} follows from the result of \cref{ent:lem:bound-approximation}.
+
+We now bound the difference between the optimal value function of the infinite-horizon discounted ERM-MDP, $v\opt_{T'}$, and the value function returned by \cref{ent:alg:rasr-vi-inf}, $v_{T'}^{\hat{\pi}\opt}$, at the planning horizon $T'$ and for any state $s\in\mathcal S$ as follows: 
+%
+\begin{align*}
+  v\opt_{T'} (s)- v_{T'}^{\hat{\pi}\opt}(s) &\stackrel{\text{(a)}}{\le}  v\opt_{T'}(s) - v^{\infty}_{\hat{\pi}^\star_{T'}}(s) + \frac{\beta\cdot \gamma^{T'} \cdot \vspan^2}{8} \\
+  &\stackrel{\text{(b)}}{\le} v^{\infty}_{\pi\opt}(s) - v^{\infty}_{\hat{\pi}^\star_{T'}}(s) + \frac{\beta\cdot \gamma^{T'} \cdot \vspan^2}{8} \\
+  &\stackrel{\text{(c)}}{\le} \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8}~.
+\end{align*}
+%
+{\bf (a)} follows from the RHS of~\eqref{ent:eq:basic-bound} and the fact that $\hat{\pi}\opt_t = \pi_{\infty}\opt ,\;\forall t\geq T'$, {\bf (b)} comes from the fact that using the LHS of~\eqref{ent:eq:basic-bound}, we have $0 \leq v^{\opt}_{\infty} - v_{T'}^{\pi^\star}$, and {\bf (c)} is true because $\hat{\pi}^\star_{T'}(s) = \pi_{\infty}\opt (s) \in \arg \max_{\pi\in \Pi_{MR}} \; v_{\infty}^{\pi}(s),\forall s\in\mathcal S$, and thus, $v_{\infty}^{\pi\opt}(s) - v_{\infty}^{\hat{\pi}^\star_{T'}}(s)$ is negative for all $s$.
+
+As the second step of the proof, we construct the value function $u_t\in \Real^S$ from $\hat{\pi}\opt$ for all $t \in 0{:}T'$ and $s\in \states$ as
+%
+\begin{align}
+\label{ent:eq:u-construction}
+  u_{T'}(s) &= v_{\infty}^{\hat{\pi}^\star_{T'}}(s) -  \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} = v_{\infty}^{\pi_{\infty}\opt}(s) - \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} = v_{\infty}\opt(s) - \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8}, \nonumber \\
+  u_t(s) &= \max_{a\in \actions} \; \erm{\beta \cdot \gamma^t} { r(s,a) + \gamma \cdot u_{t+1}(S'_{t+1,a}) } \\
+  &= \erm{\beta \cdot \gamma^t} { r(s,\hat{\pi}^\star_t(s)) + \gamma \cdot u_{t+1}(S'_{t+1,\hat{\pi}^\star_t(s)}) } ~, \nonumber
+\end{align}
+%
+where $S'_{t+1,a}$ denotes the random variable representing the state at time $t+1$ that follows by taking action $a\in\mathcal A$ in state $s$ at time $t$. 
+
+Note that $u_t$ has been constructed such that {\bf (i)} it is a lower-bound on $\hat{v}^\star_t=v_t^{\hat{\pi}\opt}$ and {\bf (ii)} $\hat{\pi}\opt$ is its greedy policy. 
+
+{\bf (i)} is true because $v_t^{\hat{\pi}\opt} = v_t^{\tilde{\pi}^\star} = \tilde{v}_t^\star$, which is the optimal finite-horizon ERM value function when we set $\tilde{v}^\star_{T'}=v_{\infty}\opt$, and $u_t$ has been constructed as the optimal finite-horizon ERM value function when we set its value at the planning horizon $T'$ by a lower-bound of $v_{\infty}\opt$ from~\eqref{ent:eq:basic-bound}: $u_{T'} = v_{\infty}\opt - \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8}$. We now provide a fomal proof for this. From~\eqref{ent:eq:basic-bound}, we have $v^{\hat{\pi}\opt}_{T'}(s) \ge u_{T'}(s)$ for all $s\in \states$. Then, assuming $v^{\hat{\pi}\opt}_{t+1}(s) \ge u_{t+1}(s)$ for all $s\in\states$ (inductive hypothesis), we can use backward induction on $t$ to show that for all $s\in\mathcal S$, we have
+%
+\begin{equation} \label{ent:eq:u-lower-bound}
+\begin{aligned}
+v^{\hat{\pi}\opt}_t(s) - u_t(s)  &= \erm{\beta \cdot \gamma^t} { r(s,\hat{\pi}\opt_t(s)) + \gamma \cdot v^{\hat{\pi}\opt}_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } - \erm{\beta \cdot \gamma^t} { r(s,\hat{\pi}\opt_t(s)) + \gamma \cdot u_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } \\
+&\stackrel{\text{(a)}}{=} \erm{\beta \cdot \gamma^t} {\gamma \cdot v^{\hat{\pi}\opt}_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } -  \erm{\beta \cdot \gamma^t} { \gamma \cdot u_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) }  \\
+&\stackrel{\text{(b)}}{=} \gamma \cdot\left(\erm{\beta \cdot \gamma^{t+1}} {  v^{\hat{\pi}\opt}_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } -  \erm{\beta \cdot \gamma^{t+1}} {  u_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } \right) \\
+&\stackrel{\text{(c)}}{\ge} 0~.
+\end{aligned}
+\end{equation}
+%
+{\bf (a)} is by subtracting the constant reward from both terms. This can be done because ERM is translation invariant. {\bf (b)} follows from the positive quasi-homogeneity of ERM (see \cref{ent:thm:pos-quasi-homogen}). {\bf (c)} follows from the monotonicity of ERM and the inductive hypothesis.
+
+{\bf (ii)} is true because $\hat{\pi}^\star_t$ is a greedy policy to $\hat{v}^\star_t$, and since subtracting a constant from all states does not change the greedy policy, it is also a greedy policy to $u_t$. The last equality in~\eqref{ent:eq:u-construction} is the result of this fact. 
+
+As the third step of the proof, we show that for each $s\in \states$ and $t = 0{:}T'$, we have 
+%
+\begin{equation}\label{ent:eq:v-u-bound}
+ v_t\opt (s) - u_t(s) \le \gamma^{T' - t} \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8}~.
+\end{equation}
+%
+To prove~\eqref{ent:eq:v-u-bound} by induction, we first show that the inequality~\eqref{ent:eq:v-u-bound} holds for $t=T'$, that is, $v_{T'}\opt (s) - u_{T'}(s) \leq \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8},\;\forall s\in\mathcal S$, as follows:
+%
+\begin{equation} \label{ent:eq:u-upper-bound}
+\begin{aligned}
+v_{T'}\opt (s) - u_{T'}(s) &= v_{T'}\opt (s) - v_{\infty}\opt(s) + \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} \\ 
+&= v_{T'}^{\pi\opt} (s) - v_{\infty}\opt(s) + \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} \\
+&\stackrel{\text{(a)}}{\leq} v_{\infty}^{\pi\opt} (s) - v_{\infty}\opt(s) + \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} \stackrel{\text{(b)}}{\leq} \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8}. 
+\end{aligned}
+\end{equation}
+%
+{\bf (a)} follows from the LHS of~\eqref{ent:eq:basic-bound} that $0 \leq v_{\infty}^{\pi\opt} (s) - v_{T'}^{\pi\opt} (s)$, and {\bf (b)} comes from the fact that $v_{\infty}\opt$ is the optimal value function of the infinite-horizon discounted risk-neutral MDP, and thus, $v_{\infty}\opt(s) \leq v_{\infty}^{\pi\opt}(s)$.
+
+Now assuming that~\eqref{ent:eq:v-u-bound} holds for $t+1$ for each $s\in \states$ (inductive hypothesis), we use backward induction on $t$ and show that for all $s\in\mathcal S$, we have
+%
+\begin{align}
+\notag v_t\opt (s) -  u_t(s) &\stackrel{\text{(a)}}{=} \erm{\beta \cdot \gamma^t} {r(s,\pi\opt_t (s)) + \gamma \cdot v\opt_{t+1}(S'_{t+1,\pi\opt_t(s)}) } - \erm{\beta \cdot \gamma^t} { r(s,\hat{\pi}\opt_t(s)) + \gamma \cdot u_{t+1}(S'_{t+1,\hat{\pi}\opt_t(s)}) } \\
+\notag &\stackrel{\text{(b)}}{\leq} \erm{\beta \cdot \gamma^t} { r(s,\pi\opt_t (s)) + \gamma \cdot v\opt_{t+1}(S'_{t+1,\pi\opt_t(s)}) } - \erm{\beta \cdot \gamma^t} { r(s,\pi\opt_t(s)) + \gamma \cdot u_{t+1}(S'_{t+1,\pi\opt_t(s)}) } \\
+\notag &\stackrel{\text{(c)}}{=} \erm{\beta \cdot \gamma^t} { \gamma \cdot v^{\pi\opt}_{t+1}(S'_{t+1,\pi\opt_t(s)}) } -  \erm{\beta \cdot \gamma^t} { \gamma \cdot u_{t+1}(S'_{t+1,\pi\opt_t(s)}) }  \\
+\label{ent:eq:ubound-rhs} 
+&\stackrel{\text{(d)}}{=} \gamma \cdot\left(\erm{\beta \cdot \gamma^{t+1}} {  v^{\pi\opt}_{t+1}(S'_{t+1,\pi\opt(s)}) } -  \erm{\beta \cdot \gamma^{t+1}} {  u_{t+1}(S'_{t+1,\pi\opt(s)}) } \right).
+\end{align}
+%
+{\bf (a)} holds by the definition of $v\opt_t$ and $u_t$, {\bf (b)} follows from $\hat{\pi}\opt$ being greedy to $u$, {\bf (c)} is by subtracting the constant reward from both terms which can be done because ERM is translation invariant, and finally {\bf (d)} follows from the positive quasi-homogeneity of ERM (see \cref{ent:thm:pos-quasi-homogen}). 
+
+Now we can write the following sequence of inequalities:
+%Then, from the inductive assumption we get the desired inequality from the monotonicity and translation invariance of ERM by bounding the terms in~\eqref{ent:eq:ubound-rhs} above as:
+%
+\begin{align}
+v_{t+1}^{\pi\opt}(s) - u_{t+1}(s) &\stackrel{\text{(a)}}{\le} \gamma^{T' - t - 1}  \cdot \frac{\beta \cdot \gamma^{T'} \cdot V^2}{8},  \qquad \forall  s \in \states \nonumber \\
+\erm{\beta \cdot \gamma^{t+1}}{v_{t+1}^{\pi\opt}(S)} - \erm{\beta \cdot \gamma^{t+1}}{u_{t+1}(S)} &\stackrel{(b)}{\le} \gamma^{T' - t - 1}  \cdot \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} \nonumber \\
+\gamma \cdot (\erm{\beta \cdot \gamma^{t+1}} {v_{t+1}^{\pi\opt}(S)} - \erm{\beta \cdot \gamma^{t+1}} {u_{t+1}(S)} ) &\le \gamma^{T' - t }  \cdot \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} ~.
+\label{ent:eq:approx-proof-bound}
+\end{align}
+%
+{\bf (a)} follows from the inductive hypothesis and {\bf (b)} comes from the monotonicity and translation invariance of ERM. 
+
+We can conclude the induction by combining~\eqref{ent:eq:ubound-rhs} and~\eqref{ent:eq:approx-proof-bound}. 
+
+Now that we proved~\eqref{ent:eq:v-u-bound}, we can set $t=0$ in it and use the fact that for all $t\in 0{:}T'$, we have $ u_t(s) \leq v^{\hat{\pi}\opt}_t(s)$, to write 
+%
+\begin{align*}
+    v_0\opt(s_0) - u_0(s_0) &\leq \gamma^{T'} \cdot \frac{\beta \cdot \gamma^{T'} \cdot \vspan^2}{8} \; \Longrightarrow \\
+    v_0^{\pi\opt}(s_0) - v^{\hat{\pi}\opt}_0(s_0) &\leq \frac{\beta \cdot \gamma^{2T'} \cdot \vspan^2}{8}, 
+\end{align*}
+%
+which concludes the proof. 
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+
+\section{PROOFS OF SECTION~\ref{ent:sec:rasr-evar}}
+\label{ent:app:sec:EVaR}
+
+\begin{figure} \label{ent:fig:h-counter-proof}
+  \centering
+ \includegraphics[width=0.45\textwidth]{Figures/Chapter5/h_plot_counter}
+ \hspace{0.08\textwidth}
+ \includegraphics[width=0.45\textwidth]{Figures/Chapter5/h_inv_plot_counter}
+  \caption{Plots of $h(\beta)$ (left) and $\zeta \mapsto h(\zeta^{-1})$ (right) for $\alpha=0.5$, which are used in the proof of \cref{ent:prop:non-concave}.}
+\end{figure}
+
+Before reporting the proofs for the theorems in \cref{ent:sec:rasr-evar}, we state some results that highlight certain properties of EVaR. Recall that the function $h\colon \Real \to \Real$ is defined in~\eqref{ent:eq:rasr-evar-ref} as
+\[
+ h(\beta) \;=\; \max_{\pi\in\Pi_{MR}}\, \left(\erm{\beta}{\mathfrak{R}_{T}^\pi} + \beta^{-1} \cdot \log(1-\alpha) \right) ~.
+\]
+Because solving EVaR-MDP reduces to computing $\max_{\beta \ge 0} h(\beta)$, it would be ideal if it were concave or at least quasi-concave. Without the maximum in the definition of $h$ (e.g.,~when $|\Pi_{MR}| = 1$), it is easy to see that the function $\zeta \mapsto h(\zeta^{-1})$ is concave~\cite{Ahmadi-Javid2012}, and thus, $h$ is quasi-concave. Unfortunately, the following proposition shows that $h$ is not necessarily quasi-concave when $|\Pi_{MR}| > 1$ (with the maximum), which precludes the use of more efficient optimization techniques for solving $\max_{\beta \ge 0} h(\beta)$.
+
+\begin{proposition}\label{ent:prop:non-concave}
+There exists an MDP and $\alpha \in [0,1)$ such that the function $h\colon  \Real \to \Real$ defined in~\eqref{ent:eq:rasr-evar-ref} is neither concave nor convex either in $\beta$ or $\beta^{-1}$.
+\end{proposition}
+
+\begin{proof}
+We show the property by constructing a counter-example for which the function $h$ is not concave. Consider an EVaR-MDP with states $\states  = \{s_0, s_1, s_2, s_3\}$, actions $\actions = \{a_1, a_2\}$, a finite-horizon objective with $T = 2$ and $\gamma = 1$, and the following parameters:
+%
+\begin{align*}
+p(\cdot  \mid s_0, a_1) = [0, 0, 1, 0], \qquad p(\cdot  \mid s_0, a_2) = [0, 0.02, 0, 0.98], \qquad r(\cdot , a_i) = [0, -2, 0, 1],\;\forall i \in  \{1,2\}~.
+\end{align*}
+%
+The transition probabilities from $s_1, s_2, s_3$ are irrelevant because the horizon is $T=2$. Since the reward is independent of the action and only depends on the state, the returns of the policies depend only on the action they take at state $s_0$. Thus, we only have two returns for all the policies in this MDP. Setting the confidence parameter to $\alpha = 0.5$, the plots in \cref{ent:fig:h-counter-proof} show that neither $h(\beta)$ {\em (left)} nor $\zeta \mapsto h(\zeta^{-1})$ {\em (right)} is concave. In each plot, the functions for the two individual returns are indicated by dotted lines and are concave, but their maximum, shown by the solid line, is not. 
+%one can easily verify that $h(\beta)$ and $\zeta \mapsto h(\zeta^{-1})$ are not quasi-concave by computing $h(1),\ldots,h(4)$.
+%\Cref{ent:fig:h-counter-proof} shows the plots of both $h(\beta)$ and $\zeta \mapsto h(\zeta^{-1})$. The function $\zeta \mapsto h(\zeta^{-1})$ would be concave if there were only a single policy; the functions for the individual policies are indicated by dotted lines in the figure and solid line indicates their maximum. Because the maximum over concave functions may no longer be concave, the maximization over $\pi$ in the definition of $h$ makes the resulting function potentially non-concave.
+\end{proof}
+
+The following technical lemma will be useful when analyzing the optimal EVaR solution.
+\begin{lemma}\label{ent:lem:evar-supremum}
+Assume a fixed $\alpha \in (0,1)$ and a random variable $X\in \mathbb{X}$. Then, either the supremum in~\eqref{ent:eq:evar-def-app} is attained at some $\beta\opt > 0$ or
+  \[
+   \evar{\alpha}{X} = \lim_{\beta \to \infty}  \left(\erm{\beta}{X} + \beta^{-1}\cdot\log(1 - \alpha)\right).
+  \]
+\end{lemma}
+
+\begin{proof}
+The lemma follows directly from Proposition~2.11 in~\cite{Ahmadi-Javid2017}.
+\end{proof}
+
+\begin{proof}[\textbf{Proof of \cref{ent:thm:equivalence-evar-erm}}]
+Recall that we assume that the supremum in~\eqref{ent:eq:rasr-evar-ref} is attained for some $\beta\opt$. Using the existence of an optimal $\beta\opt$ we get by algebraic manipulation that
+%
+\begin{equation}\label{ent:eq:evar-erm-arg-max}
+\begin{aligned}
+\pi\opt &\in \arg\max_{\pi\in \Pi_{MR}} \evar{\alpha}{\mathfrak{R}^{\pi}_{T}} \\
+&= \arg\max_{\pi\in\Pi_{MR}} \max_{\beta>0} \left( \erm{\beta}{\mathfrak{R}_{T}^\pi} + \beta^{-1} \cdot \log(1-\alpha)  \right) \\
+&\supseteq \arg\max_{\pi\in \Pi_{MR}} \left( \erm{\beta\opt}{\mathfrak{R}_{T}^\pi} + (\beta\opt)^{-1} \cdot \log(1-\alpha)  \right)  \\
+&= \arg\max_{\pi\in \Pi_{MR}}  \erm{\beta\opt}{\mathfrak{R}_{T}^\pi} \,.
+\end{aligned}
+\end{equation}
+%
+\end{proof}
+
+\begin{proof}[\textbf{Proof of \cref{ent:cor:evar-markov}}]
+The result follows directly from \cref{ent:thm:equivalence-evar-erm}.
+\end{proof}
+
+\newcommand{\api}{\hat{\pi}\opt}
+Before stating the proof of \cref{ent:thm:rasr-evar-bound}, we report some results that we use there. The following lemma shows how to decompose the approximation error of \cref{ent:alg:ERM_EVAR}.
+
+\begin{lemma}\label{ent:lem:evar-bound-decomposition}
+Let $\pi\opt $ be the optimal solution to~\eqref{ent:eq:EVaR-MDP-evar-return} and $\api$ be the policy returned by \cref{ent:alg:ERM_EVAR} when it is executed with a grid $\beta_1 < \ldots < \beta_K$ and calls to \cref{ent:alg:rasr-vi-inf} with horizon $T'$. Then, for any $\alpha\in (0,1)$, the approximation error of \cref{ent:alg:ERM_EVAR} can be bounded as
+%
+\begin{align} \label{ent:eq:evar-decomposition}
+%\begin{gathered}
+&\evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} - \evar{\alpha}{\mathfrak{R}_{\infty}^{\api}} \le \\ 
+&\max\, \Biggl\{
+\sup_{\beta\in (0,\beta_1)} h(\beta) - h(\beta_1), 
+\max_{k\in 1{:}K{-}1} \left( \sup_{\beta \in [\beta_k,\beta_{k+1})} h(\beta) - h(\beta_k) \right), 
+\sup_{\beta\in [\beta_K, \infty)} h(\beta) - h(\beta_K) \Biggr\} + \frac{\beta_K \cdot \gamma^{2T'} \cdot \vspan^2}{8}~, \nonumber
+%\end{gathered}                                                                
+\end{align}
+%
+where the function $h$ is defined by~\eqref{ent:eq:rasr-evar-ref}. Moreover, the bound for the finite-horizon objective is the same except the last term that depends on $T'$ is zero. 
+\end{lemma}
+
+\begin{proof}
+First, recall that \cref{ent:alg:ERM_EVAR} calls \cref{ent:alg:rasr-vi-inf} for each value $\beta_1, \dots , \beta_K$ in the grid and \cref{ent:alg:rasr-vi-inf} returns an approximately optimal policy $\hat{\pi}^\star$ for the ERM-MDP with the corresponding risk level $\beta_k$ and its corresponding value function $\hat{v}^k$. In the following derivation, we use $\hat{\pi}^k_t$ and $\hat{v}_t^k$ for $t=0{:}T, k = 1{:}K$ for the policy and value function, respectively, computed for $\beta_k, $ by \cref{ent:alg:rasr-vi-inf}. That is, the value function $\hat{v}_t^k$ uses ERM in the time steps $0{:}T'{-}1$ and the standard risk-neutral value function $v_{\infty}\opt$ thereafter. In contrast, the value $v^{\hat{\pi}^k}$ refers to the true ERM value function of the policy $\hat{\pi}^k$.
+
+Using arguments analogous to~\eqref{ent:eq:u-lower-bound}, one can show for each $k=1{:}K$ that
+%
+\begin{equation}\label{ent:eq:v-erm-bound-lower}
+v^{\hat{\pi}^k}_{0}(s) \le \hat{v}_{0}^k(s) ,
+\end{equation}
+%
+for each $s\in \states$. Similarly, using arguments analogous to~\eqref{ent:eq:u-upper-bound}, one can show that 
+\begin{equation} \label{ent:eq:v-erm-bound-upper}
+  \hat{v}_{0}^k(s) \le v^{\hat{\pi}^k}_{0}(s) + \frac{\beta_k \cdot \gamma^{2T'} \cdot \vspan^2}{8},
+\end{equation}
+for each $s\in \states$. 
+
+Given the definition of $\hat{v}$, we can also define the EVaR objective function $h\colon \Real \to \Real $ and its approximation in the discrete points $(\beta_k)_{k=1}^{K}$ as
+\begin{align*}
+  h(\beta) &= \max_{\pi\in\Pi_{MR}}\, \left(\erm{\beta}{\mathfrak{R}_{\infty}^\pi} + \beta^{-1} \cdot \log(1-\alpha) \right)  \\
+   &= \max_{\pi\in\Pi_{MR}}\, \left(v_{0}^{\pi}(s_0) + \beta^{-1} \cdot \log(1-\alpha) \right)  \\
+  \tilde{h}_k &=  \hat{v}_0^k(s_0) + \beta_k^{-1} \cdot \log(1-\alpha)  ~. 
+\end{align*}
+The bound in~\eqref{ent:eq:v-erm-bound-lower} then implies for $k=1{:}K$ that
+\begin{equation}\label{ent:eq:h-bound}
+  h(\beta_k) \le  \tilde{h}_k .
+\end{equation}
+
+Note that $\hat{\pi}\opt$ refers to the EVAR-MDP policy computed by \cref{ent:alg:ERM_EVAR} and, therefore, $\hat{\pi}\opt = \hat{\pi}^{k\opt}$ for the optimal $k\opt$. Then, assuming that $k\opt \in \arg\max_{k=1{:}K} \tilde{h}_k$ in \cref{ent:alg:ERM_EVAR}, we get that $\evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} - \evar{\alpha}{\mathfrak{R}_{\infty}^{\api}} = \delta$ for 
+\begin{align*}
+  \delta &= 
+    \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} -  \sup_{\beta > 0} \left( \erm{\beta}{\mathfrak{R}_{\infty}^{\api}} + \beta^{-1} \cdot \log(1-\alpha) \right) \\ 
+    &\le \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} -   v_0^{\api}(s_0) - \beta_{k\opt}^{-1} \cdot \log(1-\alpha) && \text{Substitute feasible } \beta_{k\opt}\\ 
+    &= \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} -  v_0^{\pi^{k\opt}}(s_0) - \beta_{k\opt}^{-1} \cdot \log(1-\alpha) && \text{Choice of } \api \\ 
+    &\le \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} -   \hat{v}_0^{k\opt}(s_0) - \beta_{k\opt}^{-1} \cdot \log(1-\alpha) + \frac{\beta_{k\opt} \cdot \gamma^{2T'} \cdot \vspan^2}{8}  && \text{From~\eqref{ent:eq:v-erm-bound-upper}} \\
+    &\le \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} -   \hat{v}_0^{k\opt}(s_0) - \beta_{k\opt}^{-1} \cdot \log(1-\alpha) + \frac{\beta_K \cdot \gamma^{2T'} \cdot \vspan^2}{8}  && \text{Because } \beta_K \ge \beta_{k\opt} \\
+    &= \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} - \max_{k=1{:}K}  \tilde{h}_k+ \frac{\beta_K \cdot \gamma^{2T'} \cdot \vspan^2}{8} && \text{From the optimality of } k\opt \\
+    &\le \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} - \max_{k=1{:}K}  h(\beta_k) + \frac{\beta_K \cdot \gamma^{2T'} \cdot \vspan^2}{8} && \text{From~\eqref{ent:eq:h-bound}}  \\
+    &\le \sup_{\beta>0} h(\beta) - \max_{k=1{:}K}  h(\beta_k) + \frac{\beta_K \cdot \gamma^{2T'} \cdot \vspan^2}{8}.  && \text{From the definition of } \pi\opt 
+\end{align*}
+The lemma then follows by decomposing the supremum above as
+  \[
+   \sup_{\beta >0} h(\beta) = \max \left\{ \sup_{\beta\in (0,\beta_1)} h(\beta), \sup_{\beta \in [\beta_k,\beta_{k+1})} h(\beta), \sup_{\beta\in [\beta_k, \infty)} h(\beta) \right\}.
+  \]
+\end{proof}
+
+The following three lemmas now bound each one of terms in the maximum in~\eqref{ent:eq:evar-decomposition}.
+\begin{lemma} \label{ent:lem:case1}
+The function $h\colon \Real \to \Real$  defined in~\eqref{ent:eq:rasr-evar-ref} satisfies that
+  \[
+    \sup_{\beta\in (0,\beta_1)} h(\beta) - h(\beta_1) \;\le\; \frac{\beta_1 \cdot \vspan^2}{8}.
+  \]
+Therefore, for any $\delta >0$, $\;\sup_{\beta\in (0,\beta_1)} h(\beta) - h(\beta_1) \le \delta\;$ when
+\[
+    \beta_1 \;\le\; \frac{8\delta}{\vspan^2} .
+\]
+\end{lemma}
+
+\begin{proof}
+Because the function $\beta\mapsto \erm{\beta}{X}$ is non-increasing as shown in \cref{ent:prop:erm-nonincreasing} and $\beta^{-1}\cdot \log (1-\alpha)$ is increasing for $\beta>0$, we derive the bound as
+\begin{align*}
+  \sup_{\beta\in (0,\beta_1)} h(\beta) - h(\beta_1)
+  &= \sup_{\beta\in (0,\beta_1)} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} + \beta^{-1}\cdot \log (1-\alpha) \right) - \\
+  &\qquad  \qquad \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta_1}{\mathfrak{R}_{\infty}^{\pi}} + \beta_1^{-1}\cdot \log (1-\alpha) \right) \\
+  &\le  \sup_{\beta\in (0,\beta_1)} \max_{\pi\in \Pi_{MR}}  \left(  \erm{0}{\mathfrak{R}_{\infty}^{\pi}} + \beta^{-1}\cdot \log (1-\alpha) \right) - \\
+ &\qquad \qquad   \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta_1}{\mathfrak{R}_{\infty}^{\pi}} + \beta_1^{-1}\cdot \log (1-\alpha) \right) \\
+&\le  \max_{\pi\in \Pi_{MR}}   \erm{0}{\mathfrak{R}_{\infty}^{\pi}}  - \max_{\pi\in \Pi_{MR}}    \erm{\beta_1}{\mathfrak{R}_{\infty}^{\pi}}  \\
+&\le  \max_{\pi\in \Pi_{MR}}  \left(  \erm{0}{\mathfrak{R}_{\infty}^{\pi}}  -   \erm{\beta_1}{\mathfrak{R}_{\infty}^{\pi}}  \right).
+\end{align*}
+The lemma then follows readily by algebraic manipulation from \cref{ent:lem:bound-approximation} because $\erm{0}{\mathfrak{R}_{\infty}^{\pi}} = \E[\mathfrak{R}_{\infty}^{\pi}]$.
+\end{proof}
+
+\begin{lemma} \label{ent:lem:case2}
+The function $h\colon \Real \to \Real$  defined in~\eqref{ent:eq:rasr-evar-ref} satisfies that
+  \[
+    \sup_{\beta \in [\beta_k,\beta_{k+1})} h(\beta) - h(\beta_k) \;\le\; (\beta_{k+1}^{-1} - \beta_k^{-1}) \cdot \log \left(1-\alpha\right) 
+  \]
+for each $k \in 1{:}K$. Therefore, for any $\delta > 0$, $\;\sup_{\beta \in [\beta_k,\beta_{k+1})} h(\beta) - h(\beta_k) \le \delta\;$ when
+%
+\begin{equation}\label{ent:eq:beta-bound-ref}
+\beta_{k+1} \;\le\; \frac{\beta_k \cdot \log (1-\alpha)}{\beta_{k}\delta + \log (1-\alpha) }
+\end{equation}
+%
+and $\beta_k\delta + \log (1-\alpha) < 0$. If $\;\beta_k\delta + \log (1-\alpha) \ge 0$, then $\beta_{k+1}$ is not bounded from above. 
+\end{lemma}
+
+\begin{proof}
+From the definition of $h$ and because the function $\beta\mapsto \erm{\beta}{X}$ is non-increasing as shown in \cref{ent:prop:erm-nonincreasing} and $\beta^{-1}\cdot \log (1-\alpha)$ is increasing for $\beta>0$, we have
+%because $\beta\mapsto \erm{\beta}{X}$ is non-increasing, and $\beta^{-1}\cdot \log (1-\alpha)$ is increasing for $\beta>0$, we get that
+\begin{align*}
+\sup_{\beta \in [\beta_k,\beta_{k+1})} h(\beta) - h(\beta_k)
+    &= \sup_{\beta\in [\beta_k,\beta_{k+1})} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} + \beta^{-1}\cdot \log (1-\alpha) \right) - \\
+      &\qquad\qquad  \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta_k}{\mathfrak{R}_{\infty}^{\pi}} + \beta_k^{-1}\cdot \log (1-\alpha) \right) \\
+    &\le \sup_{\beta\in [\beta_k,\beta_{k+1})} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} + \beta_{k+1}^{-1}\cdot \log (1-\alpha) \right) - \\
+    &\qquad \qquad \max_{\pi\in \Pi_{MR}}  \left( \erm{\beta_k}{\mathfrak{R}_{\infty}^{\pi}} + \beta_k^{-1}\cdot \log (1-\alpha) \right) \\
+    &\le \sup_{\beta\in [\beta_k,\beta_{k+1})} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}}  - \erm{\beta_k}{\mathfrak{R}_{\infty}^{\pi}} \right) + \\
+    &\qquad  \qquad \left(\beta_{k+1}^{-1}\cdot \log (1-\alpha)  - \beta_k^{-1}\cdot \log (1-\alpha) \right) \\
+&\le  \beta_{k+1}^{-1}\cdot \log (1-\alpha)  - \beta_k^{-1}\cdot \log (1-\alpha) .
+\end{align*}
+%
+The lemma then follows readily by algebraic manipulation. 
+\end{proof}
+
+It is important to note that the multiplicative steps in \cref{ent:lem:case2} increase with an increasing $k$. In particular, when $\delta\beta_k = -\log (1-\alpha)$, the constraint on $\beta_{k+1}$ becomes vacuous with $\beta_{k+1} \le \infty$. At this point, we know that $\beta_k$ is the last grid point that needs to be evaluated in order to guarantee an error of $\delta$. 
+
+\begin{lemma} \label{ent:lem:case3}
+The function $h\colon\Real \to \Real$ defined in~\eqref{ent:eq:rasr-evar-ref} satisfies that
+  \[
+    \sup_{\beta\in [\beta_K, \infty)} h(\beta) - h(\beta_K) \le \frac{-\log (1-\alpha)}{\beta_K}.
+  \]
+Therefore, for any $\delta > 0$, $\;\sup_{\beta\in [\beta_K, \infty)} h(\beta) - h(\beta_K) \le \delta$ when
+  \[
+   \beta_K \;\ge\; \frac{-\log (1-\alpha)}{\delta}.  
+  \]
+\end{lemma}
+
+\begin{proof}
+From the definition of $h$ and because $\beta\mapsto \erm{\beta}{X}$ is non-increasing and $\beta^{-1}\cdot \log (1-\alpha)$ is increasing for $\beta>0$, we have
+%
+\begin{align*}
+  \sup_{\beta\in [\beta_K, \infty)} h(\beta) - h(\beta_K)
+  &\le \sup_{\beta\in [\beta_K,\infty)} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} + \beta^{-1}\cdot \log (1-\alpha) \right) - \\
+  &\qquad  \qquad \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta_K}{\mathfrak{R}_{\infty}^{\pi}} + \beta_K^{-1}\cdot \log (1-\alpha) \right) \\
+ &\stackrel{\text{(a)}}{\le} \sup_{\beta\in [\beta_K,\infty)} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} \right) - \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta_K}{\mathfrak{R}_{\infty}^{\pi}} + \beta_K^{-1}\cdot \log (1-\alpha) \right) \\
+ &\le \sup_{\beta\in [\beta_K,\infty)} \max_{\pi\in \Pi_{MR}}  \left(  \erm{\beta}{\mathfrak{R}_{\infty}^{\pi}} - \erm{\beta_K}{\mathfrak{R}_{\infty}^{\pi}} \right) - \beta_K^{-1}\cdot \log (1-\alpha) \\
+ &\le - \beta_K^{-1}\cdot \log (1-\alpha) .
+\end{align*}
+%
+{\bf (a)} follows because $\beta^{-1}\cdot \log (1-\alpha)$ is negative for all $\beta\in [\beta_K,\infty)$. The lemma then follows readily by algebraic manipulation.
+\end{proof}
+
+Equipped with the above lemmas, we are now ready to prove \cref{ent:thm:rasr-evar-bound}.
+
+\begin{proof}[\textbf{Proof of \cref{ent:thm:rasr-evar-bound}}]
+Suppose that \cref{ent:alg:ERM_EVAR} is executed with the grid defined by~\eqref{ent:eq:beta-grids} and~\eqref{ent:eq:beta-k-large}, and with $T'$ set as
+%
+\begin{equation}\label{ent:eq:horizon-choice}
+ T' = \frac{\log(8\delta) - \log(\beta_{K} \vspan^2)}{2 \log \gamma}.   
+\end{equation}
+Then, \cref{ent:lem:evar-bound-decomposition,lem:case1,lem:case2,lem:case3} show that 
+\[
+ \evar{\alpha}{\mathfrak{R}_{\infty}^{\pi\opt}} - \evar{\alpha}{\mathfrak{R}_{\infty}^{\api}} \le 2\delta. 
+\]
+It remains to show that the \cref{ent:alg:ERM_EVAR} runs in time that is polynomial in $1/\delta$. 
+
+First, note that \cref{ent:alg:rasr-vi-inf} runs in time that is $O(S^2 A T')$, assuming that $v^{\infty}$ is computed using value iteration for some fixed $\gamma < 1$. Then using the choice of $T'$ in~\eqref{ent:eq:horizon-choice}, we have that evaluating a single $\beta_k$ takes $O(S^2 A \log (1/\delta))$ time.
+
+Second, we need to upper-bound the value $K$ since \cref{ent:alg:ERM_EVAR} examines each one of these values. To emphasize that $K$ is a function of $\delta$, we denote it as $K_{\delta}$ in the remainder of the proof. To upper-bound $K_{\delta}$, we first construct a lower-bound on each $\beta_{k+1},\;\forall k\in 1{:}K_{\delta}{-}1$ using definition~\eqref{ent:eq:beta-grids} and the fact that $\beta_1 \le \beta_k$ as 
+%
+\begin{equation} \label{ent:eq:beta-k-lowerbound}
+\begin{aligned}
+  \beta_{k+1}
+  &= \beta_k \cdot \frac{\log (1-\alpha)}{ \beta_k\cdot \delta + \log (1-\alpha) } \\
+  &\ge \beta_k \cdot \frac{\log (1-\alpha)}{ \beta_1\cdot \delta + \log (1-\alpha) } \\
+  &\ge \beta_1 \cdot \left(  \frac{\log (1-\alpha)}{ \beta_1\cdot \delta + \log (1-\alpha) } \right)^{k}.
+\end{aligned}
+\end{equation}
+%
+Here, we assume that $\beta_1$ is sufficiently small such that $\beta_k \cdot \delta + \log (1-\alpha) < 0$. Otherwise, we can use $K_{\delta}=1$ to achieve the desired approximation error $\delta$. 
+
+Recall that $K_{\delta}$ is chosen such that~\eqref{ent:eq:beta-k-large} is satisfied:
+\[
+  \beta_{K_{\delta}} \ge \frac{-\log (1-\alpha)}{\delta}.
+\]
+Substituting the lower-bound on $\beta_{K_{\delta}}$ from~\eqref{ent:eq:beta-k-lowerbound} we get that the sufficient condition for $K_{\delta}$ is that
+%
+\begin{equation}\label{ent:eq:condition-k-basic}
+  \beta_1 \cdot \left(  \frac{\log (1-\alpha)}{ \beta_1\cdot \delta + \log (1-\alpha) } \right)^{K_{\delta}-1} \ge 
+  \frac{-\log (1-\alpha)}{\delta}.
+\end{equation}
+%
+Next, define a variable $z$ as follows and substitute the value for $\beta_1$ from~\eqref{ent:eq:beta-grids} to get
+%
+\begin{equation} \label{ent:eq:z-definition}
+z = \frac{\beta_1 \cdot \delta}{- \log (1-\alpha)} = \frac{8 \delta^2}{-\vspan^2 \cdot \log (1-\alpha)}.
+\end{equation}
+%
+From the assumption that $\beta_k \cdot \delta + \log (1-\alpha) < 0$ and the fact that $\alpha \in (0,1)$, we get that $-\log (1-\alpha) \in (0,\infty)$ and, thus, $z\in (0,1)$. Substituting the variable $z$ into~\eqref{ent:eq:condition-k-basic} yields that the sufficient condition for $K_{\delta}$ is that
+\[
+  \left( \frac{1}{1-z} \right)^{K_{\delta}-1} \ge \frac{1}{z}.
+\]
+Taking the log of both sides and algebraic manipulation realizing that $(1-z)^{-1}\in (0,\infty)$ gives that it is sufficient to choose $K_{\delta}$ such that
+\[
+ K_{\delta} = \frac{\log \frac{1}{z}}{\log \frac{1}{1-z}} + 1 =  \frac{\log \frac{1}{z}}{\sum_{n=1}^{\infty} \frac{z^n}{n}} + 1 \le \frac{1}{z} \cdot \log \frac{1}{z} + 1.
+\]
+The derivation above follows by a MacLaurin expansion of the denominator which is valid because $z\in (0,1)$. The last inequality follows because $z >0$. Then, substituting the expression for $z$ from~\eqref{ent:eq:z-definition}, we get that
+\[
+  K_{\delta} \in O\left(\frac{\log(1/\delta)}{\delta^2}\right).
+\]
+The complexity statement in the theorem then follows from the fact that running \cref{ent:alg:rasr-vi-inf} for each $K_{\delta}$ takes $O(S^2 A \log(1/\delta))$ time. 
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage 
+\section{NUMERICAL RESULTS: DETAILS}
+\label{ent:sec:experiments-detail}
+
+\begin{table}
+    \caption{$\var{0.9}{\mathfrak{R}^{\pi}_{T}}$ for $\pi$ returned by each method.} \label{ent:tab:var_09}
+    \centering
+    \begin{tabular}{l|rrrrr}
+      \toprule
+    \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} &  \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+      \midrule
+      \textbf{\cref{ent:alg:ERM_EVAR}}  & -2.82 & 10.80 & 87.80 & 202 & 500 \\ 
+      Naive grid & -2.90 & 10.80 & 52.60 & 202 & 501 \\ 
+      Naive level & -10.00 & 11.40 & 83.30 & 201 & 217 \\ 
+      \midrule
+      Risk neutral & -2.90 & 12.60 & 67.50 & 202 & 499 \\ 
+      Nested CVaR & -10.00 & 0.00 & 0.00 & 138 & 217 \\ 
+      Nested EVaR & -10.00 & 10.30 & 0.00 & 173 & 217 \\ 
+      ERM & -3.00 & 9.75 & 62.40 & 187 & 217 \\ 
+      Nested ERM & -10.00 & 10.30 & 32.20 & 157 & 217 \\ 
+      \midrule
+      Augmented CVaR & -3.18 & 12.56 & 55.80 & 82 & 110 \\
+      \bottomrule
+    \end{tabular}
+\end{table}
+\begin{table}
+    \caption{$\E\left[\mathfrak{R}^{\pi}_{T}\right]$ for $\pi$ returned by each method.} \label{ent:tab:exp}
+    \centering
+    \begin{tabular}{rlrrrrr}
+      \toprule
+    \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} &  \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+      \midrule
+       \textbf{\cref{ent:alg:ERM_EVAR}} & -1.01 & 14.30 & 114.00 & 218 & 873 \\ 
+       Naive grid & -1.01 & 14.30 & 63.20 & 219 & 873 \\ 
+       Naive level & -10.00 & 15.80 & 107.00 & 217 & 217 \\ 
+      \midrule
+       Risk neutral & -0.98 & 17.10 & 128.00 & 219 & 871 \\ 
+       Nested CVaR & -10.00 & 0.00 & 0.00 & 142 & 217 \\ 
+       Nested EVaR & -10.00 & 14.60 & 0.00 & 182 & 217 \\ 
+       ERM & -0.99 & 14.20 & 76.40 & 197 & 217 \\ 
+       Nested ERM & -10.00 & 14.60 & 39.70 & 163 & 217 \\ 
+      \bottomrule
+      Augmented CVaR & -2.36 & 14.55 & 69.68 & 135 & 101 \\
+      \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\subsection{Domain Details}
+
+For each domain, we also provide CSV files in supplementary material with the exact specifications of the domains we use. The states in our tabular domains are identified with integer values $0, \dots, S-1$, and actions for each state $s$ are identified also with integer values $0, \dots , A_{s}-1$. Note that the action counts may be state-dependent. In our experiments, we assume that the reward $r\colon \states \times \actions \times \states \to \Real$ depends both on the originating and the destination state. Each CSV file has the following columns: ``idstatefrom'', ``idaction'', ``idstateto'', ``probability'', and ``reward''. Each row entry specifies a transition from ``idstatefrom'' after taking an ction ``idaction'' to state ``idstateto'' with the associated probability and reward. It is important to note that each combination (``idstatefrom'', ``idaction'', ``idstateto'') is not necessarily unique; repeated combinations indicate different transitions to the same state. These transitions need to be properly accounted for when computing the risk of $r(S,A,S')$ since the associated rewards may be different. 
+
+\subsubsection{Machine Replacement}
+
+This is the domain with the nominal transition probabilities described in \cite{Delage2009}. We use the same discount factor $\gamma = 0.9$ and the time horizon $T=100$. The initial state $s_0$ is that the machine is in the repair state $R_1$ indexed as ``idstate'' = 1. The exact definition of the problem is given in \texttt{machine.csv}.
+
+\subsubsection{Gambler's Ruin}
+
+This domain is based on a problem given in \cite{Bauerle2011}. In this problem, a gambler starts with an initial capital $c_0$ can invest some of it in each time period. This investment doubles with a probability $p$ and is lost with a probability $1-p$. The reward is zero until a target wealth level $c_f$ is achieved. The reward in the absorbing state $c_f$ is $1.0$. The state in this problem is the current, and the action is the investment. We use the initial capital $c_0 = 7$, the target capital $c_f = 10$, the probability of win $p = 0.7$, and the discount factor $\gamma = 0.95$. For this domain, we use a longer horizon $T = 200$. The precise definition of the problem is given in \texttt{ruin.csv}.
+
+\subsubsection{Inventory Management}
+
+This is a classical single-product stochastic inventory control problem~\cite{Puterman2005}. The states $\states  = \left\{ 0, \dots , S_{\max} \right\}$ represent the current stock of the product. The actions $\actions_s = \left\{ 0, \dots, \min\{A_{\max},(S_{\max}-s) \} \right\}$ for each state $s\in \states $ represent the amount of product ordered. The integer-valued random variable $D$ represents the random demand. At any time step $t$, the next state $S_{t+1}$ is a random variable computed as 
+\[
+  S_{t+1} = \left[ s_t + a_t - D \right]_+.
+\]
+The amount of product sold computed in a time step is
+\[
+    l_t = s_t - S_{t+1} + a_t.
+\]
+The revenue $u$  and expenses $e$ are computed as
+\begin{align*}
+  u_t &= l_t \cdot p  \\
+  x_t &=
+    \begin{cases}
+      c^h \cdot  s_t \cdot  & \text{if } a_t = 0 \\
+      c^h \cdot s_t + c^f + c^v \cdot a_t & \text{otherwise}
+    \end{cases}.
+\end{align*}
+Here, $p$ is the purchase price and $c^h$, $c^f$, and $c^v$ are holding, fixed, and variable costs, respectively. The reward is then $r_t = u_t - x_t$.
+
+\begin{table}
+  \centering
+  \caption{Parameters of the inventory management problems.} \label{ent:tab:inventory-parameters}
+  \begin{tabular}{l|rr}
+    \toprule
+    Parameter & \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} \\
+    \midrule
+    $\gamma$ & 0.9 & 0.9 \\
+    $S_{\max}$ & 100 & 40 \\
+    $A_{\max}$ & 50 & 10 \\
+    Distribution $D$ & Categorical & Poisson, $\lambda = 30$\\
+    $p$ & 16 & 4.99 \\
+    $c^h$ & 0.3 & 0.05 \\
+    $c^f$ & 2 & 0.49 \\
+    $c^v$ & 5 & 2.49 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The specific parameters that we use for the two inventory problems are summarized in \cref{ent:tab:inventory-parameters}. The time horizon for both problems is $T = 100$. The exact specifications of the two inventory domains are given in \texttt{inventory1.csv} and \texttt{inventory2.csv}.
+
+\subsubsection{Riverswim}
+
+This is an adapted version of the riverswim problem described in \cite{Strehl2008model}. The discount factor in this problem is $\gamma = 0.9$ and the horizon is $T = 100$.
+
+\subsection{Algorithms}
+
+\subsubsection{ \cref{ent:alg:ERM_EVAR}}
+
+We implemented the algorithm in Julia, closely following the pseudo-code in \cref{ent:alg:ERM_EVAR}. The grid of values $\beta_k$ are selected according to~\eqref{ent:eq:beta-grids} with the parameters $\delta$ and $\vspan$ given in \cref{ent:tab:evar-algo-params}. We chose the value $\vspan$ based on the reward function structure of the problem and chose the tolerance value $\delta$ accordingly to be about $10\%$ of the value function span. For small problems, like MR, we reduced $\delta$ even further. Anecdotally, $\delta$ has a smaller impact on the solution's quality than $\vspan$, but can significantly increase the computation time. The ERM-MDP sub-problem is solved exactly, which is possible because the horizon is finite. 
+
+\begin{table}
+  \caption{Parameters of \cref{ent:alg:ERM_EVAR} for each benchmark problem. }
+  \label{ent:tab:evar-algo-params}
+  \centering
+  \begin{tabular}{l|rr}
+    \toprule
+    Domain & Tolerance $\delta$ & Scale $(1-\gamma) \cdot \vspan$  \\
+    \midrule
+    MR & 2 & 20 \\
+    GR & 0.5 & 1 \\
+    INV1 & 5 & 5 \\
+    INV2 & 1 & 1 \\
+    RS & 1 & 1 \\
+    \bottomrule                                  
+  \end{tabular}
+\end{table}
+
+\subsubsection{Naive Grid}
+
+Follows the same approach as \cref{ent:alg:ERM_EVAR}, but uses $\beta_k, k = 1{:}K$ computed as
+\[
+ \beta_1 = 10^{5}, \quad  \beta_k = \frac{10 - \beta_1}{K-1}.
+\]
+The value $K$ is chosen to be the same for each domain as the optimized $K$ in \eqref{ent:eq:beta-grids}.
+
+\subsubsection{Naive Level}
+
+
+Follows the same approach as \cref{ent:alg:ERM_EVAR}, but computes the value $v^k$ for $\beta^k$ by solving the following dynamic program for each $s\in \states $ and $t=0{:}T{-}1$ as
+\[
+ v_t^k(s) = \max_{a\in \actions} \, \erm{\beta_k}{r_{sa} + \gamma \cdot v_{t+1}^k( S'_{sa})}, 
+\]
+where $S'_{sa}$ is the random variable that represents the state that follows after taking an action $a$ in state $s$.
+
+\subsubsection{Nested EVaR, CVaR, ERM}
+
+For any risk measure $\risko\colon \mathbb{X} \to \Real$, like CVaR and EVaR, solve computes the value $v\opt$ by solving the following dynamic program for each $s\in \states $ and $t=0{:}T{-}1$ as
+\[
+ v_t\opt (s) = \max_{a\in \actions} \, \risk{r_{sa} + \gamma \cdot v_{t+1}\opt (S'_{sa})}, 
+\]
+where $S'_{sa}$ is the random variable that represents the state that follows after taking an action $a$ in state $s$. Then, we evaluate a greedy policy $\pi_t\opt\colon \states \to \actions, t=0{:}T{-}1$ constructed to satisfy
+\[
+ \pi_t\opt(s) \in \max_{a\in \actions} \, \risk{r_{sa} + \gamma \cdot v_{t+1}(S'_{sa})}. 
+\]
+For EVaR and CVaR, we use $\alpha = 0.9$ and for ERM, we use $\beta=0.5$.
+
+\subsubsection{ERM}
+
+We solve the optimal ERM value function and policy as described in \cref{ent:sec:rasr-erm} using $\beta=0.5$
+
+\subsubsection{Augmented CVaR}
+
+We implemented the tabular version of the algorithm described in \cite{Chow2015}. We chose the discretization as recommended in \cite{Chow2015} with the maximum number of points so that the computation finished in at most 10 minutes (about 20 times longer than the computation of other methods). One of the sources of complexity in this algorithm is that one needs to solve a linear program for every evaluation of the Bellman operator.
+
+\subsection{Results}
+
+\Cref{ent:tab:var_09,tab:exp} show additional results for the algorithms and domains that we have compared. The results are broadly consistent with the results for other risk measures, and we include them for the sake of completeness. 
+
+\begin{table}
+    \caption{$\var{0.9}{\mathfrak{R}^{\pi}_{T}}$ for $\pi$ returned by each method.}
+    \label{ent:tab:var_09}
+    \centering
+    \begin{tabular}{l|rrrrr}
+      \toprule
+    \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} &  \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+      \midrule
+      \textbf{\cref{ent:alg:ERM_EVAR}}  & -2.82 & 10.80 & 87.80 & 202 & 500 \\ 
+      Naive grid & -2.90 & 10.80 & 52.60 & 202 & 501 \\ 
+      Naive level & -10.00 & 11.40 & 83.30 & 201 & 217 \\ 
+      \midrule
+      Risk neutral & -2.90 & 12.60 & 67.50 & 202 & 499 \\ 
+      Nested CVaR & -10.00 & 0.00 & 0.00 & 138 & 217 \\ 
+      Nested EVaR & -10.00 & 10.30 & 0.00 & 173 & 217 \\ 
+      ERM & -3.00 & 9.75 & 62.40 & 187 & 217 \\ 
+      Nested ERM & -10.00 & 10.30 & 32.20 & 157 & 217 \\ 
+      \midrule
+      Augmented CVaR & -3.18 & 12.56 & 55.80 & 82 & 110 \\
+      \bottomrule
+    \end{tabular}
+\end{table}
+\begin{table}
+    \caption{$\E\left[\mathfrak{R}^{\pi}_{T}\right]$ for $\pi$ returned by each method.}
+    \label{ent:tab:exp}
+    \centering
+    \begin{tabular}{l|rrrrr}
+      \toprule
+    \multicolumn{1}{c|}{Method} & \multicolumn{1}{c}{MR} & \multicolumn{1}{c}{GR} &  \multicolumn{1}{c}{INV1} & \multicolumn{1}{c}{INV2} & \multicolumn{1}{c}{RS}  \\
+      \midrule
+       \textbf{\cref{ent:alg:ERM_EVAR}} & -1.01 & 14.30 & 114.00 & 218 & 873 \\ 
+       Naive grid & -1.01 & 14.30 & 63.20 & 219 & 873 \\ 
+       Naive level & -10.00 & 15.80 & 107.00 & 217 & 217 \\ 
+      \midrule
+       Risk neutral & -0.98 & 17.10 & 128.00 & 219 & 871 \\ 
+       Nested CVaR & -10.00 & 0.00 & 0.00 & 142 & 217 \\ 
+       Nested EVaR & -10.00 & 14.60 & 0.00 & 182 & 217 \\ 
+       ERM & -0.99 & 14.20 & 76.40 & 197 & 217 \\ 
+       Nested ERM & -10.00 & 14.60 & 39.70 & 163 & 217 \\ 
+      \midrule
+      Augmented CVaR & -2.36 & 14.55 & 69.68 & 135 & 101 \\
+      \bottomrule
+    \end{tabular}
+\end{table}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
