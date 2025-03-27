@@ -12,7 +12,7 @@ x = range(-10, 15, length=200)
 
 
 # Plot the PDF curve
-plot(x, pdf.(dist, x), label=L"\tilde{x}_1 ∼ q", linewidth=2, color=:darkred,alpha=0.7)
+plot(x, pdf.(dist, x), label="x̃₁ ∼ q", linewidth=2, color=:darkred,alpha=0.7)
 plot!(x, pdf.(dist, x)/0.3, label="30% ⋅ ξ ≤ q", linewidth=2, color=:darkblue,alpha=0.7)
 # Fill the area to the left of the 1% quantile
 fill_x = x[x .<= VaR_30]  # Select x values on the left of the quantile
