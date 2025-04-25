@@ -44,31 +44,47 @@ function soft_m_val(m,X,p,κ)
     return sum(p .* [soft_quantile_loss(x-m,0.5,κ) for x in X])
 end 
 
-M = range(-5, 5, length=1000)
-plot(M, [m_val(m,X,p) for m in M],ylim=(0,4), title="Mean of Soft Quantile Loss",label=L"\lim_{\kappa \to 0^+} \kappa",xlabel=L"m",ylabel=L"\mathbb{E}[l_{0.5}^{\kappa}(\tilde{x}-m)]", linewidth=3, color=:red,alpha=0.7)
-plot!(M, [soft_m_val(m,X,p,0.01) for m in M], label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
+M = range(-3, 3, length=1000)
+plot(M, [m_val(m,X,p) for m in M],ylim=(0,4), title="Mean of Soft Quantile Loss",label=L"\kappa \to 0^+",xlabel=L"y",
+ylabel=L"\mathbb{E}[l_{0.5}^{\kappa}(\tilde{x}-y)]", linewidth=3, color=:red,alpha=0.7,legend=:topright,
+guidefontsize=18,tickfontsize=16,legendfontsize=14,titlefontsize=20)
+# plot!(M, [soft_m_val(m,X,p,0.01) for m in M], label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
 plot!(M, [soft_m_val(m,X,p,0.1) for m in M],label=L"\kappa = 0.1",linewidth=3, color=:blue,alpha=0.7)
 plot!(M, [soft_m_val(m,X,p,0.5) for m in M],label=L"\kappa = 0.5", linewidth=3, color=:teal,alpha=0.7)
 savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss.pdf"))
 savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss.png"))
 
-δs = range(-5, 5, length=1000)
-plot(δs, [quantile_loss(δ,0.5) for δ in δs],ylim=(0,4), title="Soft Quantile Loss Function",label=L"\lim_{\kappa \to 0^+} \kappa",xlabel=L"\delta",ylabel=L"l_{0.5}^{\kappa}(\delta)", linewidth=3, color=:red,alpha=0.7)
-plot!(δs, [soft_quantile_loss(δ,0.5,0.01) for δ in δs],label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
+δs = range(-3, 3, length=1000)
+plot(δs, [quantile_loss(δ,0.5) for δ in δs],ylim=(0,4), title="Soft Quantile Loss Function",label=L"\kappa \to 0^+",xlabel=L"\delta",
+ylabel=L"l_{0.5}^{\kappa}(\delta)", linewidth=3, color=:red,alpha=0.7,legend=:topright,
+guidefontsize=18,tickfontsize=16,legendfontsize=14,titlefontsize=20)
+# plot!(δs, [soft_quantile_loss(δ,0.5,0.01) for δ in δs],label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
 plot!(δs, [soft_quantile_loss(δ,0.5,0.1) for δ in δs],label=L"\kappa = 0.1", linewidth=3, color=:blue,alpha=0.7)
 plot!(δs, [soft_quantile_loss(δ,0.5,0.5) for δ in δs],label=L"\kappa = 0.5",linewidth=3, color=:teal,alpha=0.7)
 savefig(check_path("fig/Dissertation/ppt/soft_quantile_loss.pdf"))
 savefig(check_path("fig/Dissertation/ppt/soft_quantile_loss.png"))
 
-plot(M, [m_val(m,X,p) for m in M],ylim=(0,4), title="Mean of Quantile Loss",label="",xlabel=L"m",ylabel=L"\mathbb{E}[l_{0.5}(\tilde{x}-m)]", linewidth=3, color=:red,alpha=0.7)
+plot(M, [m_val(m,X,p) for m in M],ylim=(0,4), title="Mean of Quantile Loss",label="",xlabel=L"y",
+ylabel=L"\mathbb{E}[l_{0.5}(\tilde{x}-y)]", linewidth=3, color=:red,alpha=0.7,
+guidefontsize=18,tickfontsize=16,legendfontsize=14,titlefontsize=20)
 savefig(check_path("fig/Dissertation/ppt/mean_quantile_loss.png"))
 plot(δs, [quantile_loss(δ,0.5) for δ in δs],ylim=(0,4), title="Quantile Loss Function",label="",xlabel=L"\delta",ylabel=L"l_{0.5}(\delta)", linewidth=3, color=:red,alpha=0.7)
 savefig(check_path("fig/Dissertation/ppt/quantile_loss.png"))
 
 
 M = range(-0.1, 0.1, length=1000)
-plot(M, [m_val(m,X,p) for m in M], title="Mean of Soft Quantile Loss",label=L"\lim_{\kappa \to 0^+} \kappa",xlabel=L"m",ylabel=L"\mathbb{E}[l_{0.5}^{\kappa}(\tilde{x}-m)]", linewidth=3, color=:red,alpha=0.7)
+plot(M, [m_val(m,X,p) for m in M], title="Mean of Soft Quantile Loss",label=L"\kappa \to 0^+",xlabel=L"y",
+ylabel=L"\mathbb{E}[l_{0.5}^{\kappa}(\tilde{x}-y)]", linewidth=3, color=:red,alpha=0.7,
+guidefontsize=18,tickfontsize=16,legendfontsize=14,titlefontsize=20)
 plot!(M, [soft_m_val(m,X,p,0.01) for m in M], label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
 savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss_zoom.pdf"))
 savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss_zoom.png"))
+
+M = range(-1.1, 1.1, length=1000)
+plot(M, [m_val(m,X,p) for m in M], title="Mean of Soft Quantile Loss",label=L"\kappa \to 0^+",xlabel=L"y",
+ylabel=L"\mathbb{E}[l_{0.5}^{\kappa}(\tilde{x}-y)]", linewidth=3, color=:red,alpha=0.7,
+guidefontsize=18,tickfontsize=16,legendfontsize=14,titlefontsize=20)
+plot!(M, [soft_m_val(m,X,p,0.01) for m in M], label=L"\kappa = 0.01", linewidth=3, color=:purple,alpha=0.7)
+savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss_single.pdf"))
+savefig(check_path("fig/Dissertation/ppt/mean_soft_quantile_loss_single.png"))
 

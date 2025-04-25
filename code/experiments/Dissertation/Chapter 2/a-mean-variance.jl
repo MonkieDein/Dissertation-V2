@@ -21,12 +21,12 @@ CVaR_50_2 = mean(filter(x -> x <= quantile(dist2, 0.50), rand(dist2, 100_000))) 
 EVaR_25_1 = EVaR(distribution(rand(dist1, 100_000)),[0.25]) # EVaR 25% (dist1)
 EVaR_25_2 = EVaR(distribution(rand(dist2, 100_000)),[0.25]) # EVaR 25% (dist2)
 # Plot horizontal reference lines
-plot(; xlims=(-20,20),ylims=(-1,5), legend=false, title="Risk Measure of the Distributions", 
-xlabel="Value", yticks=(0:4, ["EVaR 25%", "CVaR 50%","VaR 75%","Mean","Std Dev"]))
+plot(; xlims=(-20,20),ylims=(-1,4), legend=false, title="Risk Measure of the Distributions", 
+xlabel="Value", yticks=(0:3, ["EVaR 25%", "CVaR 50%","VaR 75%","Mean"]))
 
 # Add points for the distributions
-scatter!([sd1], [4], markershape=:hexagon, markersize=6, color=:lightcoral)
-scatter!([sd2], [4], markershape=:hexagon, markersize=6, color=:lightskyblue)
+# scatter!([sd1], [4], markershape=:hexagon, markersize=6, color=:lightcoral)
+# scatter!([sd2], [4], markershape=:hexagon, markersize=6, color=:lightskyblue)
 scatter!([mean1], [3], markershape=:circle, markersize=6, color=:lightcoral)
 scatter!([mean2], [3], markershape=:circle, markersize=6, color=:lightskyblue)
 scatter!([VaR_75_1], [2], markershape=:star, markersize=6, color=:lightcoral)
@@ -37,7 +37,7 @@ scatter!([EVaR_25_1], [0], markershape=:square, markersize=6, color=:lightcoral)
 scatter!([EVaR_25_2], [0], markershape=:square, markersize=6, color=:lightskyblue)
 
 # Add horizontal lines
-hline!([0, 1, 2, 3, 4], linestyle=:dot, color=:gray, linewidth=1)
+hline!([0, 1, 2, 3], linestyle=:dot, color=:gray, linewidth=1)
 
 # Manually add legend using annotations
 annotate!(15, 4.8, text("x̃₁", :lightcoral, :left, 12))
